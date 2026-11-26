@@ -20,3 +20,24 @@ workflows:
           zip -r AtisTakip.ipa Payload
     artifacts:
       - AtisTakip.ipa
+
+  android-workflow:
+    name: Android Build
+    instance_type: linux_x2
+    scripts:
+      - name: Prepare web assets
+        script: |
+          mkdir -p www
+          cp index.html www/
+      - name: Install Capacitor and add Android
+        script: |
+          npm install
+          npx cap add android
+          npx cap sync android
+      - name: Build Debug APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
