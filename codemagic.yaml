@@ -1,0 +1,22 @@
+workflows:
+  ios-workflow:
+    name: iOS Build
+    instance_type: mac_mini_m2
+    scripts:
+      - name: Prepare web assets
+        script: |
+          mkdir -p www
+          cp index.html www/
+      - name: Install Capacitor and add iOS
+        script: |
+          npm install
+          npx cap add ios
+          npx cap sync ios
+      - name: Build unsigned IPA
+        script: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath build/App.xcarchive archive CODE_SIGNING_ALLOWED=NO
+          mkdir -p Payload
+          cp -r build/App.xcarchive/Products/Applications/App.app Payload/
+          zip -r AtisTakip.ipa Payload
+    artifacts:
+      - AtisTakip.ipa
