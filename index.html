@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atış Eğitim Kontrol ve Kayıt Sistemi</title>
+
+  <!-- Bootstrap 5 CSS ve İkon Kütüphanesi -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- SheetJS (Çok Sayfalı Excel Okuma / Yazma) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    /* =====================================================================
+       1. GRİ / ANTRASİT TEMA RENK DEĞİŞKENLERİ
+       ===================================================================== */
+    :root {
+      --bg-ana: #eceef1;
+      --bg-kart: #ffffff;
+      --bg-ust: #3f464e;
+      --bg-sidebar: #2b3036;
+      --bg-brand: #1c2024;
+      --vurgu-ana: #495057;
+      --vurgu-koyu: #343a40;
+      --text-ana: #212529;
+      --text-ikincil: #6c757d;
+      --border-renk: #d0d5dd;
+      --skor-bg: #f8f9fa;
+      --skor-aktif-bg: #e9ecef;
+      --siradaki-bg: #f1f3f5;
+      --siradaki-border: #ced4da;
+    }
+
+    body {
+      background-color: var(--bg-ana);
+      color: var(--text-ana);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+
+    /* Tüm metin kutuları ve seçim listelerinde kesin büyük harf zorunluluğu */
+    input[type="text"], textarea, select {
+      text-transform: uppercase;
+    }
+
+    /* SOL MENÜ (SIDEBAR - KOYU GRİ / ANTRASİT) */
+    .sidebar {
+      width: 112px;
+      min-height: 100vh;
+      background-color: var(--bg-sidebar);
+      color: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .brand-box {
+      background-color: var(--bg-brand);
+      padding: 14px 8px;
+      text-align: center;
+      border-bottom: 1px solid #343a40;
+    }
+    .nav-item-btn {
+      color: #ced4da;
+      text-align: center;
+      padding: 13px 5px;
+      font-size: 12.5px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+    .nav-item-btn:hover {
+      background-color: #383e45;
+      color: #ffffff;
+    }
+    .nav-item-btn i { display: block; font-size: 20px; margin-bottom: 3px; }
+    .nav-item-btn.active {
+      background-color: #495057;
+      color: #ffffff;
+      font-weight: 600;
+      border-left: 4px solid #adb5bd;
+    }
+
+    /* KARTLAR VE KUTULAR */
+    .custom-card, .yol-kart {
+      background-color: var(--bg-kart);
+      border: 1px solid var(--border-renk);
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+    }
+
+    /* ANA EKRAN BÜYÜK BUTON KARTLARI */
+    .ana-menu-kart {
+      background-color: var(--bg-kart);
+      border: 1px solid var(--border-renk);
+      border-radius: 12px;
+      padding: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.1s, background-color 0.15s;
+    }
+    .ana-menu-kart:hover { background-color: #f8f9fa; }
+    .ana-menu-kart:active { transform: scale(0.98); }
+    .ana-menu-kart.birincil {
+      background-color: var(--vurgu-koyu);
+      color: #ffffff;
+      border: none;
+    }
+    .ana-menu-kart.birincil:hover { background-color: #23272b; }
+    .ana-ikon-kutu {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: #e9ecef;
+      color: var(--vurgu-koyu);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .ana-menu-kart.birincil .ana-ikon-kutu {
+      background: rgba(255,255,255,0.15);
+      color: #ffffff;
+    }
+
+    /* GRİ ANA BUTONLAR */
+    .btn-gri {
+      background-color: var(--vurgu-koyu);
+      color: #ffffff;
+      border: none;
+    }
+    .btn-gri:hover {
+      background-color: #212529;
+      color: #ffffff;
+    }
+
+    /* DATAGRIDVIEW TABLO TASARIMI */
+    .dgv-container {
+      border: 1px solid var(--border-renk);
+      border-radius: 6px;
+      background: var(--bg-kart);
+      overflow-y: auto;
+      max-height: 360px;
+    }
+    .dgv-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      color: var(--text-ana);
+    }
+    .dgv-table thead th {
+      background-color: #e9ecef;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-renk);
+      padding: 8px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .dgv-table tbody td {
+      border-bottom: 1px solid var(--border-renk);
+      padding: 7px 10px;
+      cursor: pointer;
+    }
+    .dgv-table tbody tr:hover { background-color: #f1f3f5; }
+    .dgv-table tbody tr.secili-satir { background-color: #495057 !important; color: #fff !important; }
+
+    /* ATIŞ YOLLARI VE SKOR KUTULARI */
+    .yol-badge {
+      background-color: var(--vurgu-koyu);
+      color: white;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .skor-kutusu {
+      background-color: var(--skor-bg);
+      border: 1px solid var(--border-renk);
+      border-radius: 8px;
+      text-align: center;
+      padding: 8px 4px;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+    .skor-kutusu:active { transform: scale(0.96); }
+    .skor-kutusu.kaydedildi {
+      background-color: var(--skor-aktif-bg);
+      border: 2px solid var(--vurgu-koyu);
+    }
+    .skor-rakam { font-size: 32px; font-weight: 700; line-height: 1.1; }
+    .skor-toplam { font-size: 15px; color: var(--text-ikincil); font-weight: 600; }
+    .siradaki-grup-box {
+      background-color: var(--siradaki-bg);
+      border: 1px solid var(--siradaki-border);
+      border-radius: 8px;
+      font-size: 12.5px;
+    }
+
+    /* SEÇENEK BUTONLARI */
+    .secenek-btn {
+      border: 1px solid var(--border-renk);
+      background: var(--bg-kart);
+      color: var(--text-ana);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .secenek-btn.aktif {
+      background-color: var(--vurgu-koyu);
+      color: #ffffff;
+      border-color: var(--vurgu-koyu);
+    }
+
+    .ekran-bolumu { display: none; }
+    .ekran-bolumu.aktif { display: block; }
+
+    @media print {
+      .sidebar, .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .modal { position: static !important; display: block !important; }
+      .modal-dialog { max-width: 100% !important; margin: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="d-flex">
+  <!-- =====================================================================
+       SOL MENÜ (GRİ / ANTRASİT)
+       ===================================================================== -->
+  <div class="sidebar flex-shrink-0 no-print" id="solMenuBar">
+    <div>
+      <div class="brand-box">
+        <div class="fw-bold fs-6">ATIŞ SİSTEMİ</div>
+        <div style="font-size: 10px; color: #adb5bd; line-height: 1.2;">Eğitim Kontrol<br>ve Kayıt</div>
+      </div>
+      <div class="nav-item-btn active" data-sekme="anaekran" onclick="sekmeAc('anaekran', this)"><i class="bi bi-house-door"></i>Ana Ekran</div>
+      <div class="nav-item-btn" data-sekme="atis" onclick="sekmeAc('atis', this)"><i class="bi bi-bullseye"></i>Atış</div>
+      <div class="nav-item-btn" data-sekme="personel" onclick="sekmeAc('personel', this)"><i class="bi bi-people"></i>Personel</div>
+      <div class="nav-item-btn" data-sekme="gozlemciler" onclick="sekmeAc('gozlemciler', this)"><i class="bi bi-person-badge"></i>Gözlemciler</div>
+      <div class="nav-item-btn" data-sekme="arsiv" onclick="sekmeAc('arsiv', this)"><i class="bi bi-archive"></i>Arşiv</div>
+      <div class="nav-item-btn" data-sekme="admin" onclick="sekmeAc('admin', this)"><i class="bi bi-shield-check"></i>Admin</div>
+    </div>
+
+    <div>
+      <div class="nav-item-btn" onclick="oncekiSayfayaDon()"><i class="bi bi-arrow-left-circle"></i>Geri Dön</div>
+    </div>
+  </div>
+
+  <!-- ANA İÇERİK ALANI -->
+  <div class="flex-grow-1 p-3">
+
+    <!-- EXCEL VERİTABANI BAĞLANTI ÇUBUĞU -->
+    <div class="alert alert-secondary d-flex flex-wrap justify-content-between align-items-center py-2 px-3 mb-3 no-print" id="excelDurumBar">
+      <div>
+        <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i>
+        <strong id="bagliDosyaAdi">Excel Veritabanı Bağlı Değil (Veriler Geçici Hafızada)</strong>
+        <span class="small d-block d-md-inline ms-md-2" id="bagliDosyaAciklama">Kalıcı kayıt için tabletteki Excel dosyasını bağlayın.</span>
+      </div>
+      <div class="d-flex gap-2 mt-2 mt-md-0">
+        <button onclick="yeniExcelOlusturVeBagla()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-file-earmark-plus"></i> Yeni Excel Oluştur</button>
+        <button onclick="mevcutExcelBagla()" class="btn btn-dark btn-sm fw-bold"><i class="bi bi-folder2-open"></i> Mevcut Excel Seç</button>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         1. SEKME: ANA EKRAN (DASHBOARD)
+         ===================================================================== -->
+    <div id="sekme-anaekran" class="ekran-bolumu aktif">
+      <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded text-white" style="background-color: var(--bg-ust);">
+        <div>
+          <h4 class="fw-bold mb-0">Atış Eğitim Kontrol ve Kayıt Sistemi</h4>
+          <small id="bugunTarihMetni"></small>
+        </div>
+        <span class="badge bg-light text-dark">İnternetsiz Yerel Sistem</span>
+      </div>
+
+      <!-- Devam Eden Atış Kartı -->
+      <div class="custom-card mb-3 d-flex flex-wrap justify-content-between align-items-center" id="devamEdenAtisKarti" style="display:none !important;">
+        <div>
+          <span class="badge bg-dark mb-1"><i class="bi bi-play-circle"></i> DEVAM EDEN ATIŞ</span>
+          <h5 class="fw-bold mb-0" id="devamFaaliyetAdi">-</h5>
+          <small class="text-muted" id="devamFaaliyetDetay">-</small>
+        </div>
+        <button onclick="sekmeAc('atis', document.querySelector('[data-sekme=atis]'))" class="btn btn-gri fw-bold px-4 py-2">
+          <i class="bi bi-arrow-right"></i> DEVAM ET
+        </button>
+      </div>
+
+      <!-- Ana Menü Kartları -->
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="ana-menu-kart birincil" onclick="yeniFaaliyetSihirbaziAc()">
+            <div class="ana-ikon-kutu"><i class="bi bi-plus-lg"></i></div>
+            <div>
+              <h5 class="fw-bold mb-1">Yeni Atış</h5>
+              <div class="small opacity-75">Yeni atış faaliyeti başlat (Faaliyet, Gözlemciler, Personel)</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6" id="kartArsiv">
+          <div class="ana-menu-kart" onclick="sekmeAc('arsiv', document.querySelector('[data-sekme=arsiv]'))">
+            <div class="ana-ikon-kutu"><i class="bi bi-archive"></i></div>
+            <div>
+              <h5 class="fw-bold mb-1">Arşiv</h5>
+              <div class="small text-muted">Eski kayıtlar, gelişim grafikleri, sıralama ve imzalı raporlar</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="ana-menu-kart" onclick="sekmeAc('personel', document.querySelector('[data-sekme=personel]'))">
+            <div class="ana-ikon-kutu"><i class="bi bi-people"></i></div>
+            <div>
+              <h5 class="fw-bold mb-1">Personel ve Gözlemci Kayıtları</h5>
+              <div class="small text-muted">Atışa katılacak personel ve yol gözlemcilerini düzenle</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="ana-menu-kart" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]'))">
+            <div class="ana-ikon-kutu"><i class="bi bi-building-gear"></i></div>
+            <div>
+              <h5 class="fw-bold mb-1">Admin (Birlik & Atış Yeri)</h5>
+              <div class="small text-muted">Birlik, atış poligonu tanımları ve sistem yedekleme işlemleri</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         2. SEKME: ATIŞ YÖNETİMİ (3 ADIMLI HAZIRLIK + CANLI ATIŞ)
+         ===================================================================== -->
+    <div id="sekme-atis" class="ekran-bolumu">
+
+      <!-- ADIM 1: FAALİYET BİLGİLERİ VE ATIŞ TÜRÜ -->
+      <div id="atis-adim-1" class="custom-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-2 mb-3 gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+            <div>
+              <span class="badge bg-dark me-1">1 FAALİYET</span>
+              <span class="badge bg-secondary me-1">2 GÖZLEMCİLER</span>
+              <span class="badge bg-secondary">3 PERSONEL</span>
+              <h5 class="fw-bold mt-1 mb-0">Faaliyet Bilgileri ve Kişi Başı Mühimmat</h5>
+            </div>
+          </div>
+          <span class="text-muted small fw-bold" id="yeniFaaliyetKodu">ATS-2026-0001</span>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">FAALİYET ADI *</label>
+              <input type="text" id="fAdi" class="form-control fw-bold" value="TERMAL HEDEF ATIŞI" required>
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-bold mb-0">BİRLİK SEÇİN *</label>
+                <a href="#" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]')); return false;" class="small text-dark fw-bold text-decoration-none">+ BİRLİK EKLE (ADMİN)</a>
+              </div>
+              <select id="fBirlikSelect" class="form-select fw-bold" required>
+                <option value="">-- ADMİN SAYFASINDAN BİRLİK SEÇİN --</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-bold mb-0">ATIŞ YERİ / POLİGONU SEÇİN *</label>
+                <a href="#" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]')); return false;" class="small text-dark fw-bold text-decoration-none">+ ATIŞ YERİ EKLE (ADMİN)</a>
+              </div>
+              <select id="fYerSelect" class="form-select fw-bold" required>
+                <option value="">-- ADMİN SAYFASINDAN ATIŞ YERİ SEÇİN --</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-bold mb-0">ATIŞ SORUMLUSU / GÖZLEMCİ SEÇİN *</label>
+                <a href="#" onclick="sekmeAc('gozlemciler', document.querySelector('[data-sekme=gozlemciler]')); return false;" class="small text-dark fw-bold text-decoration-none">+ YENİ GÖZLEMCİ EKLE</a>
+              </div>
+              <select id="fSorumluSelect" class="form-select fw-bold" required>
+                <option value="">-- ÖNCE GÖZLEMCİLER SEKMESİNDEN EKLEYİN --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-2">
+              <label class="form-label small fw-bold d-block">ZAMAN</label>
+              <div class="d-flex gap-2" id="grpZaman">
+                <button type="button" class="secenek-btn aktif" onclick="secenekSec('grpZaman', this)">GÜNDÜZ</button>
+                <button type="button" class="secenek-btn" onclick="secenekSec('grpZaman', this)">GECE</button>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold d-block">HEDEF TÜRÜ</label>
+              <div class="d-flex gap-2" id="grpHedef">
+                <button type="button" class="secenek-btn aktif" onclick="secenekSec('grpHedef', this)">TERMAL</button>
+                <button type="button" class="secenek-btn" onclick="secenekSec('grpHedef', this)">ÇELİK</button>
+                <button type="button" class="secenek-btn" onclick="secenekSec('grpHedef', this)">KÂĞIT</button>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold d-block">ATIŞ AMACI</label>
+              <div class="d-flex gap-2" id="grpAmac">
+                <button type="button" class="secenek-btn aktif" onclick="secenekSec('grpAmac', this)">EĞİTİM</button>
+                <button type="button" class="secenek-btn" onclick="secenekSec('grpAmac', this)">SIFIRLAMA</button>
+              </div>
+            </div>
+            <div class="row g-2 mt-2">
+              <div class="col-6">
+                <label class="form-label small fw-bold">KİŞİ BAŞI MÜHİMMAT *</label>
+                <input type="number" id="fMermi" class="form-control fw-bold" value="3" min="1" max="50">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold">AÇIK YOL SAYISI (1-10)</label>
+                <input type="number" id="fYolSayisi" class="form-control fw-bold" value="10" min="1" max="10">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-3 pt-2 border-top">
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
+          <button onclick="atisAdimGec(2)" class="btn btn-gri fw-bold px-4">İLERİ <i class="bi bi-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- ADIM 2: GÖZLEMCİLERİ YOLLARA DAĞITMA -->
+      <div id="atis-adim-2" class="custom-card" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+          <div>
+            <span class="badge bg-secondary me-1">✓ FAALİYET</span>
+            <span class="badge bg-dark me-1">2 GÖZLEMCİLER</span>
+            <span class="badge bg-secondary">3 PERSONEL</span>
+            <h5 class="fw-bold mt-1 mb-0">Yollara Gözlemci Ataması</h5>
+          </div>
+          <button onclick="sekmeAc('gozlemciler', document.querySelector('[data-sekme=gozlemciler]'))" class="btn btn-outline-dark btn-sm fw-bold">+ YENİ GÖZLEMCİ EKLE</button>
+        </div>
+
+        <p class="small text-muted">KAYITLI GÖZLEMCİLER YOLLARA OTOMATİK DAĞITILDI. DİLERSENİZ HER YOLUN GÖZLEMCİSİNİ LİSTEDEN DEĞİŞTİREBİLİRSİNİZ.</p>
+        <div class="row row-cols-1 row-cols-md-5 g-2" id="yolGozlemciAtamaAlani"></div>
+
+        <div class="d-flex justify-content-between mt-3 pt-2 border-top">
+          <button onclick="atisAdimGec(1)" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
+          <button onclick="atisAdimGec(3)" class="btn btn-gri fw-bold px-4">İLERİ <i class="bi bi-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- ADIM 3: PERSONEL LİSTESİ KONTROLÜ VE ATIŞI BAŞLAT -->
+      <div id="atis-adim-3" class="custom-card" style="display:none;">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-2 mb-3 gap-2">
+          <div>
+            <span class="badge bg-secondary me-1">✓ FAALİYET</span>
+            <span class="badge bg-secondary me-1">✓ GÖZLEMCİLER</span>
+            <span class="badge bg-dark">3 PERSONEL</span>
+            <h5 class="fw-bold mt-1 mb-0">Atışa Katılacak Personel Listesi (<span id="adim3KisiSayisi">0</span> Kişi)</h5>
+          </div>
+          <div class="d-flex gap-2">
+            <button onclick="sekmeAc('personel', document.querySelector('[data-sekme=personel]'))" class="btn btn-outline-dark btn-sm fw-bold">+ PERSONEL EKLE</button>
+          </div>
+        </div>
+
+        <div class="dgv-container mb-3">
+          <table class="dgv-table">
+            <thead>
+              <tr>
+                <th>SIRA</th>
+                <th>ADI SOYADI</th>
+                <th>RÜTBE</th>
+                <th>SİCİL NO (11 HANE)</th>
+                <th>ATANACAK YOL</th>
+                <th>YOL GÖZLEMCİSİ</th>
+              </tr>
+            </thead>
+            <tbody id="adim3PersonelTablo"></tbody>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-between pt-2 border-top">
+          <button onclick="atisAdimGec(2)" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
+          <button onclick="atisiBaslat()" class="btn btn-gri fw-bold px-4">
+            <i class="bi bi-bullseye"></i> ATIŞI BAŞLAT
+          </button>
+        </div>
+      </div>
+
+      <!-- ADIM 4: CANLI YOKLAMA VE 10 YOL ATIŞ EKRANI -->
+      <div id="atis-adim-4" style="display:none;">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <button onclick="atisAdimGec(1)" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h4 class="mb-0 fw-bold"><span id="aktifSiraNo">1</span>. SIRA</h4>
+                <span class="badge bg-dark" id="rozetAsama1">1 YOKLAMA</span>
+                <span class="badge bg-secondary" id="rozetAsama2">2 ATIŞ</span>
+                <span class="badge bg-secondary" id="rozetAsama3">3 TAMAMLA</span>
+              </div>
+              <small class="text-muted" id="atisYonergeMetni">HERKES HAZIR SAYILIR. GELMEYEN VARSA GELMEDİ'YE BASIN; YERİNE SIRADAKİ GELİR. SONRA SIRAYI BAŞLAT.</small>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <label class="btn btn-outline-dark btn-sm mb-0 fw-bold" style="cursor:pointer;">
+              <i class="bi bi-camera"></i> FOTOĞRAF
+              <input type="file" accept="image/*" capture="environment" hidden onchange="kanitDosyasiEklendi(this, 'FOTOĞRAF')">
+            </label>
+            <button id="btnSirayiBaslat" onclick="sirayiBaslat()" class="btn btn-gri fw-bold px-4">
+              <i class="bi bi-play-fill"></i> SIRAYI BAŞLAT
+            </button>
+            <button id="btnSirayiTamamla" onclick="siraTamamlaOnayAc()" class="btn btn-dark fw-bold px-4" style="display:none;">
+              <i class="bi bi-check-lg"></i> SIRAYI TAMAMLA
+            </button>
+          </div>
+        </div>
+
+        <!-- İstatistik & Sıradaki Grup Şeridi -->
+        <div class="row g-2 mb-3">
+          <div class="col-md-3">
+            <div class="custom-card p-2 d-flex justify-content-around text-center">
+              <div><div class="fw-bold fs-5" id="statBekleyen">0</div><small class="text-muted">BEKLEYEN</small></div>
+              <div><div class="fw-bold fs-5" id="statBiten">0</div><small class="text-muted">BİTEN</small></div>
+              <div><div class="fw-bold fs-5" id="statToplam">0</div><small class="text-muted">TOPLAM</small></div>
+            </div>
+          </div>
+          <div class="col-md-9">
+            <div class="siradaki-grup-box p-2 h-100 d-flex align-items-center" style="cursor:pointer;" onclick="siradakiGrupModalAc()" title="Sıradaki grupta eksik varsa dokunun">
+              <div class="pe-3 border-end">
+                <strong class="text-dark d-block">SIRADAKİ GRUP</strong>
+                <small class="text-muted">eksik varsa dokunun</small>
+              </div>
+              <div class="row flex-grow-1 ps-3 g-1" id="siradakiGrupContainer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10 YOL KARTLARI -->
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-2" id="yollarContainer"></div>
+      </div>
+
+    </div>
+
+    <!-- =====================================================================
+         3. SEKME: PERSONEL KAYIT VE YÖNETİMİ (GÖZLEMCİ KALDIRILDI, 11 HANE ZORUNLU)
+         ===================================================================== -->
+    <div id="sekme-personel" class="ekran-bolumu">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+          <div>
+            <h4 class="fw-bold mb-0">Asker / Personel Kayıt Paneli</h4>
+            <small class="text-muted">Sicil No alanı boş geçilemez (NOT NULL), yalnızca rakam girilebilir ve 11 hane olmak zorundadır.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="custom-card mb-3">
+        <form id="personelFormu" class="row g-2 align-items-end" novalidate>
+          <input type="hidden" id="duzenlenenId" value="">
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1">RÜTBE *</label>
+            <select id="pRutbe" class="form-select form-select-sm fw-bold">
+              <option value="ER">ER</option>
+              <option value="ONB">ONB</option>
+              <option value="ÇVŞ">ÇVŞ</option>
+              <option value="UZM.ÇVŞ">UZM.ÇVŞ</option>
+              <option value="ASTSB">ASTSB</option>
+              <option value="SB">SB</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-bold mb-1">ADI SOYADI *</label>
+            <input type="text" id="pAd" class="form-control form-control-sm fw-bold" placeholder="ÖRN: AHMET YILMAZ">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1">SİCİL NO (11 HANE SAYI) *</label>
+            <input type="text" id="pSicil" class="form-control form-control-sm fw-bold sadece-sayi" maxlength="11" inputmode="numeric" placeholder="11 HANELİ SİCİL NO">
+          </div>
+          <div class="col-md-3 d-flex gap-1">
+            <button type="submit" id="btnKaydetGuncelle" class="btn btn-gri btn-sm w-100 fw-bold">
+              <i class="bi bi-save"></i> KAYDET
+            </button>
+            <button type="button" id="btnVazgec" onclick="formuTemizle()" class="btn btn-secondary btn-sm" style="display:none;"><i class="bi bi-x-lg"></i></button>
+          </div>
+        </form>
+      </div>
+
+      <div class="custom-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0">KAYITLI PERSONEL (<span id="toplamPersonelSayisi">0</span>)</h6>
+          <input type="text" id="tabloAramaInput" onkeyup="personelTablosunuCiz()" class="form-control form-control-sm" style="width: 240px;" placeholder="AD VEYA SİCİL NO ARA...">
+        </div>
+        <div class="dgv-container">
+          <table class="dgv-table">
+            <thead>
+              <tr>
+                <th>SIRA</th>
+                <th>RÜTBE</th>
+                <th>ADI SOYADI</th>
+                <th>SİCİL NO</th>
+                <th>KAYIT TARİHİ</th>
+                <th class="text-center">İŞLEMLER</th>
+              </tr>
+            </thead>
+            <tbody id="personelTabloGovde"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         4. SEKME: GÖZLEMCİLER KAYIT PANELİ
+         ===================================================================== -->
+    <div id="sekme-gozlemciler" class="ekran-bolumu">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+          <div>
+            <h4 class="fw-bold mb-0">Gözlemci / Eğitmen Kayıt Paneli</h4>
+            <small class="text-muted">Sicil No alanı boş geçilemez (NOT NULL), yalnızca rakam girilebilir ve 11 hane olmak zorundadır.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="custom-card mb-3">
+        <form id="gozlemciFormu" class="row g-2 align-items-end" novalidate>
+          <input type="hidden" id="duzenlenenGozlemciId" value="">
+          <div class="col-md-2">
+            <label class="form-label small fw-bold mb-1">RÜTBE *</label>
+            <select id="gRutbe" class="form-select form-select-sm fw-bold">
+              <option value="UZM.ÇVŞ">UZM.ÇVŞ</option>
+              <option value="ASTSB.ÇVŞ">ASTSB.ÇVŞ</option>
+              <option value="ASTSB.ÜÇVŞ">ASTSB.ÜÇVŞ</option>
+              <option value="ASTSB.BÇVŞ">ASTSB.BÇVŞ</option>
+              <option value="TĞM">TĞM</option>
+              <option value="ÜTĞM">ÜTĞM</option>
+              <option value="YZB">YZB</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-bold mb-1">GÖZLEMCİ ADI SOYADI *</label>
+            <input type="text" id="gAd" class="form-control form-control-sm fw-bold" placeholder="ÖRN: LEVENT AKTAŞ">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-bold mb-1">SİCİL NO (11 HANE SAYI) *</label>
+            <input type="text" id="gSicil" class="form-control form-control-sm fw-bold sadece-sayi" maxlength="11" inputmode="numeric" placeholder="11 HANELİ SİCİL NO">
+          </div>
+          <div class="col-md-3 d-flex gap-1">
+            <button type="submit" id="btnGozlemciKaydet" class="btn btn-gri btn-sm w-100 fw-bold">
+              <i class="bi bi-save"></i> GÖZLEMCİ KAYDET
+            </button>
+            <button type="button" id="btnGozlemciVazgec" onclick="gozlemciFormuTemizle()" class="btn btn-secondary btn-sm" style="display:none;"><i class="bi bi-x-lg"></i></button>
+          </div>
+        </form>
+      </div>
+
+      <div class="custom-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0">KAYITLI GÖZLEMCİLER (<span id="toplamGozlemciSayisi">0</span>)</h6>
+          <input type="text" id="gozlemciAramaInput" onkeyup="gozlemciTablosunuCiz()" class="form-control form-control-sm" style="width: 240px;" placeholder="GÖZLEMCİ ADI VEYA SİCİL ARA...">
+        </div>
+        <div class="dgv-container">
+          <table class="dgv-table">
+            <thead>
+              <tr>
+                <th>SIRA</th>
+                <th>RÜTBE</th>
+                <th>ADI SOYADI</th>
+                <th>SİCİL NO</th>
+                <th>KAYIT TARİHİ</th>
+                <th class="text-center">İŞLEMLER</th>
+              </tr>
+            </thead>
+            <tbody id="gozlemciTabloGovde"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         5. SEKME: ARŞİV, PUAN SIRALAMASI VE İMZALI RAPORLAR
+         ===================================================================== -->
+    <div id="sekme-arsiv" class="ekran-bolumu">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+          <div>
+            <h4 class="fw-bold mb-0">Arşiv ve Raporlar</h4>
+            <small class="text-muted" id="muhimmatSarfOzet">MÜHİMMAT SARFI: TOPLAM 0 ADET</small>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="secenek-btn aktif" id="tabBtnKayitlar" onclick="arsivAltSekme('kayitlar')">ATIŞ KAYITLARI</button>
+          <button class="secenek-btn" id="tabBtnSiralama" onclick="arsivAltSekme('siralama')">PUAN SIRALAMASI</button>
+          <button onclick="imzaModalAc()" class="btn btn-gri btn-sm fw-bold"><i class="bi bi-pen"></i> ATIŞ SORUMLUSU İMZASI & RAPOR</button>
+        </div>
+      </div>
+
+      <div id="arsiv-kayitlar" class="custom-card">
+        <div class="d-flex justify-content-between mb-2">
+          <input type="text" id="arsivArama" onkeyup="arsivTablosunuCiz()" class="form-control form-control-sm" style="width:280px;" placeholder="KİŞİ ADI, SİCİL NO VEYA FAALİYET ARA...">
+          <button onclick="raporYazdirAc()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-printer"></i> FAALİYET RAPORU / SARF TUTANAĞI</button>
+        </div>
+        <div class="dgv-container">
+          <table class="dgv-table">
+            <thead>
+              <tr>
+                <th>FAALİYET / TARİH</th>
+                <th>SIRA / YOL</th>
+                <th>RÜTBE & AD SOYAD</th>
+                <th>SİCİL</th>
+                <th>GÖZLEMCİ</th>
+                <th>İSABET / MÜHİMMAT</th>
+                <th>100 PUAN</th>
+                <th>DURUM</th>
+              </tr>
+            </thead>
+            <tbody id="arsivTabloGovde"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="arsiv-siralama" class="custom-card" style="display:none;">
+        <p class="small text-muted mb-2">100 ÜZERİNDEN ORTALAMA PUANA GÖRE SIRALANIR; EŞİT PUANDA AYNI SIRA NUMARASI VERİLİR VE ALFABETİK DİZİLİR.</p>
+        <div class="dgv-container">
+          <table class="dgv-table">
+            <thead>
+              <tr>
+                <th>SIRA</th>
+                <th>ADI SOYADI</th>
+                <th>RÜTBESİ</th>
+                <th>SİCİL NO</th>
+                <th>ATIŞ SAYISI</th>
+                <th>ORTALAMA</th>
+                <th>EN İYİ</th>
+                <th>EN DÜŞÜK</th>
+                <th>SON PUAN</th>
+              </tr>
+            </thead>
+            <tbody id="siralamaTabloGovde"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================================
+         6. SEKME: ADMİN PANELİ (BİRLİK, ATIŞ YERİ YÖNETİMİ VE YEDEKLEME)
+         ===================================================================== -->
+    <div id="sekme-admin" class="ekran-bolumu">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+        <div>
+          <h4 class="fw-bold mb-0">Admin Paneli — Birlik ve Atış Yeri Yönetimi</h4>
+          <small class="text-muted">Buraya eklediğiniz Birlik ve Atış Yerleri yeni atış başlatırken listede doğrudan seçilebilir.</small>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <!-- BİRLİK YÖNETİMİ -->
+        <div class="col-md-6">
+          <div class="custom-card h-100">
+            <h6 class="fw-bold border-bottom pb-2"><i class="bi bi-flag-fill"></i> Birlik Kayıtları</h6>
+            <form id="birlikFormu" class="d-flex gap-2 mb-3" novalidate>
+              <input type="text" id="yeniBirlikInput" class="form-control form-control-sm fw-bold" placeholder="ÖRN: 1. PİYADE EĞİTİM TABURU">
+              <button type="submit" class="btn btn-gri btn-sm fw-bold px-3 text-nowrap"><i class="bi bi-plus-lg"></i> EKLE</button>
+            </form>
+            <div class="dgv-container" style="max-height: 250px;">
+              <table class="dgv-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">SIRA</th>
+                    <th>BİRLİK ADI</th>
+                    <th class="text-center" style="width: 70px;">İŞLEM</th>
+                  </tr>
+                </thead>
+                <tbody id="birlikTabloGovde"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ATIŞ YERİ / POLİGON YÖNETİMİ -->
+        <div class="col-md-6">
+          <div class="custom-card h-100">
+            <h6 class="fw-bold border-bottom pb-2"><i class="bi bi-geo-alt-fill"></i> Atış Yeri / Poligon Kayıtları</h6>
+            <form id="atisYeriFormu" class="d-flex gap-2 mb-3" novalidate>
+              <input type="text" id="yeniAtisYeriInput" class="form-control form-control-sm fw-bold" placeholder="ÖRN: 100 METRE ATIŞ POLİGONU">
+              <button type="submit" class="btn btn-gri btn-sm fw-bold px-3 text-nowrap"><i class="bi bi-plus-lg"></i> EKLE</button>
+            </form>
+            <div class="dgv-container" style="max-height: 250px;">
+              <table class="dgv-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">SIRA</th>
+                    <th>ATIŞ YERİ / POLİGON ADI</th>
+                    <th class="text-center" style="width: 70px;">İŞLEM</th>
+                  </tr>
+                </thead>
+                <tbody id="atisYeriTabloGovde"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAM YEDEKLEME KARTI -->
+      <div class="custom-card">
+        <h6 class="fw-bold"><i class="bi bi-download"></i> Sistem Yedekleme ve Geri Yükleme (JSON)</h6>
+        <p class="small text-muted mb-2">Bütün personel, gözlemci, birlik, atış yeri, atış kayıtları ve imza verilerini tek dosyaya yedekler.</p>
+        <div class="d-flex gap-2">
+          <button onclick="tamYedekIndir()" class="btn btn-gri btn-sm fw-bold"><i class="bi bi-download"></i> TAM YEDEK AL</button>
+          <label class="btn btn-outline-dark btn-sm fw-bold mb-0" style="cursor:pointer;">
+            <i class="bi bi-upload"></i> YEDEKTEN GERİ YÜKLE
+            <input type="file" accept=".json" hidden onchange="tamYedekYukle(this)">
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODALLAR
+     ========================================================================= -->
+<div class="modal fade" id="duzeltModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="duzeltBaslik">YOL DÜZELTME</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="duzeltYolIndex">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div>
+            <small class="text-muted d-block">MEVCUT İSABET</small>
+            <span class="fs-2 fw-bold" id="duzeltMevcutSkor">0</span>
+          </div>
+          <button onclick="duzeltEksiBir()" class="btn btn-outline-dark fw-bold">-1</button>
+          <div class="flex-grow-1">
+            <small class="text-muted d-block">DOĞRU SAYIYI YAZ</small>
+            <div class="input-group input-group-sm">
+              <input type="number" id="duzeltYeniSayi" class="form-control" min="0" max="50">
+              <button onclick="duzeltSayiYaz()" class="btn btn-gri fw-bold">YAZ</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">KİŞİYE ÖZEL NOT</label>
+          <div class="input-group input-group-sm">
+            <input type="text" id="duzeltNotInput" class="form-control fw-bold" placeholder="ÖRN: TUTUKLUK GİDERİLDİ, TEKRAR ATIŞ VERİLDİ">
+            <button onclick="duzeltNotEkle()" class="btn btn-secondary">NOT EKLE</button>
+          </div>
+        </div>
+
+        <div class="border-top pt-2">
+          <strong class="small d-block mb-1">İŞLEM GEÇMİŞİ (DEĞİŞİKLİK İZİ)</strong>
+          <div id="duzeltGecmisListesi" class="small text-muted" style="max-height:130px; overflow-y:auto;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">KAPAT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="siradakiGrupModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">SIRADAKİ GRUP: EKSİK VAR MI?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="siradakiGrupModalIcerik"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">KAPAT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="siraTamamlaModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="siraTamamlaBaslik">1. SIRA TAMAMLANSIN MI?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="siraTamamlaIcerik"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">GERİ DÖN</button>
+        <button type="button" onclick="sirayiKesinTamamla()" class="btn btn-gri fw-bold px-4">SIRAYI TAMAMLA VE KAYDET</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="imzaModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">ATIŞ SORUMLUSU İMZASI</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="fw-bold mb-2" id="imzaSorumluBilgi">ATIŞ SORUMLUSU</div>
+        <canvas id="imzaCanvas" width="420" height="170" style="border:2px dashed #6c757d; border-radius:8px; background:#fff; touch-action:none;"></canvas>
+        <div class="mt-2 d-flex justify-content-between">
+          <button type="button" onclick="imzaTemizle()" class="btn btn-outline-secondary btn-sm">TEMİZLE</button>
+          <small class="text-muted">Ekrana parmağınızla veya fareyle imza atın.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">VAZGEÇ</button>
+        <button type="button" onclick="imzaKaydet()" class="btn btn-gri btn-sm fw-bold">İMZAYI KAYDET</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="kisiGecmisModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="kisiGecmisBaslik">PERSONEL GELİŞİMİ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="kisiGecmisIcerik"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="raporModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content" style="background:#fff; color:#000;">
+      <div class="modal-header no-print">
+        <h5 class="modal-title fw-bold">RAPOR ÖNİZLEME (A4 YAZDIR / PDF KAYDET)</h5>
+        <div class="d-flex gap-2">
+          <button onclick="window.print()" class="btn btn-gri btn-sm fw-bold"><i class="bi bi-printer"></i> YAZDIR / PDF OLARAK KAYDET</button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+      <div class="modal-body p-4" id="raporCiktiAlani"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // =========================================================================
+  // 0. TÜRKÇE BÜYÜK HARF VE SADECE SAYI (SİCİL NO) KONTROL MOTORU
+  // =========================================================================
+  function buyukHarfTr(metin) {
+    if (metin === null || metin === undefined) return "";
+    return String(metin).toLocaleUpperCase('tr-TR');
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target) return;
+
+    // Sicil No gibi sadece rakam kabul eden alanlarda harf ve sembolleri anında temizle
+    if (e.target.classList.contains('sadece-sayi')) {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 11);
+      return;
+    }
+
+    // Diğer metin alanlarında Türkçe büyük harf zorunluluğu
+    if (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target.type === 'text')) {
+      const imlecBas = e.target.selectionStart;
+      const imlecSon = e.target.selectionEnd;
+      e.target.value = buyukHarfTr(e.target.value);
+      if (imlecBas !== null && imlecSon !== null) {
+        e.target.setSelectionRange(imlecBas, imlecSon);
+      }
+    }
+  });
+
+
+  // =========================================================================
+  // 1. GLOBAL DURUM, SAYFA GEÇMİŞİ VE VERİ DEPOSU
+  // =========================================================================
+  let dosyaTutucu = null;
+  let kayitliImzaDataUrl = null;
+  let aktifSekmeAdi = "anaekran";
+  let sayfaGecmisi = [];
+
+  let birlikListesi = ["PİYADE EĞİTİM TABURU"];
+  let atisYeriListesi = ["100 METRE ATIŞ POLİGONU"];
+  let gozlemciListesi = [];
+  let personelListesi = [];
+  let atisArsivi = [];
+
+  let aktifFaaliyet = {
+    kod: "ATS-2026-0001",
+    adi: "TERMAL HEDEF ATIŞI",
+    birlik: "PİYADE EĞİTİM TABURU",
+    yer: "100 METRE ATIŞ POLİGONU",
+    sorumlu: "",
+    zaman: "GÜNDÜZ",
+    hedef: "TERMAL",
+    amac: "EĞİTİM",
+    mermi: 3,
+    yolSayisi: 10,
+    baslamaZamani: ""
+  };
+
+  let yolGozlemcileri = {};
+  let atisKuyrugu = [];
+  let siraNumarasi = 1;
+  let aktifYollar = [];
+  let sonYoklamaYedek = null;
+  let atisBasladiMi = false;
+  let bitenSayisi = 0;
+
+  let seciliGozlemciId = null;
+  let seciliSatirId = null;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('bugunTarihMetni').innerText = buyukHarfTr(new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+    imzaCanvasHazirla();
+    yerelHafizadanYukle();
+    adminListeleriniCiz();
+    selectListeleriniDoldur();
+  });
+
+  function cihazSaatiniAl() {
+    return new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function yerelHafizayaKaydet() {
+    const veri = { kayitliImzaDataUrl, birlikListesi, atisYeriListesi, gozlemciListesi, personelListesi, atisArsivi, aktifFaaliyet, atisKuyrugu, siraNumarasi, aktifYollar, atisBasladiMi, bitenSayisi };
+    localStorage.setItem('poligon_kayit_yedek', JSON.stringify(veri));
+    devamEdenAtisKartiniGuncelle();
+  }
+
+  function yerelHafizadanYukle() {
+    const kayit = localStorage.getItem('poligon_kayit_yedek');
+    if (!kayit) return;
+    try {
+      const v = JSON.parse(kayit);
+      kayitliImzaDataUrl = v.kayitliImzaDataUrl || null;
+      if (Array.isArray(v.birlikListesi) && v.birlikListesi.length > 0) birlikListesi = v.birlikListesi.map(buyukHarfTr);
+      if (Array.isArray(v.atisYeriListesi) && v.atisYeriListesi.length > 0) atisYeriListesi = v.atisYeriListesi.map(buyukHarfTr);
+      gozlemciListesi = (v.gozlemciListesi || []).map(g => ({ ...g, rutbe: buyukHarfTr(g.rutbe), ad: buyukHarfTr(g.ad), sicil: String(g.sicil || "").replace(/\D/g, '') }));
+      personelListesi = (v.personelListesi || []).map(p => ({ ...p, rutbe: buyukHarfTr(p.rutbe), ad: buyukHarfTr(p.ad), sicil: String(p.sicil || "").replace(/\D/g, '') }));
+      atisArsivi = v.atisArsivi || [];
+      if (v.aktifFaaliyet) aktifFaaliyet = v.aktifFaaliyet;
+      atisKuyrugu = v.atisKuyrugu || [];
+      siraNumarasi = v.siraNumarasi || 1;
+      aktifYollar = v.aktifYollar || [];
+      atisBasladiMi = v.atisBasladiMi || false;
+      bitenSayisi = v.bitenSayisi || 0;
+
+      adminListeleriniCiz();
+      gozlemciTablosunuCiz();
+      selectListeleriniDoldur();
+      personelTablosunuCiz();
+      arsivTablosunuCiz();
+      devamEdenAtisKartiniGuncelle();
+    } catch (e) {}
+  }
+
+  function devamEdenAtisKartiniGuncelle() {
+    const kart = document.getElementById('devamEdenAtisKarti');
+    if (atisKuyrugu.length > 0 && aktifYollar.length > 0) {
+      kart.style.setProperty('display', 'flex', 'important');
+      document.getElementById('devamFaaliyetAdi').innerText = buyukHarfTr(aktifFaaliyet.adi);
+      document.getElementById('devamFaaliyetDetay').innerText = `${aktifFaaliyet.kod} • ${atisKuyrugu.length} KİŞİ • ${siraNumarasi}. SIRA`;
+    } else {
+      kart.style.setProperty('display', 'none', 'important');
+    }
+  }
+
+
+  // =========================================================================
+  // 2. ÇOK SAYFALI EXCEL VERİTABANI MOTORU
+  // =========================================================================
+  async function yeniExcelOlusturVeBagla() {
+    try {
+      dosyaTutucu = await window.showSaveFilePicker({
+        suggestedName: 'ATISSISTEMI.xlsx',
+        types: [{ description: 'Excel Dosyası', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
+      });
+      await exceleKaydet();
+      baglantiDurumunuGuncelle(dosyaTutucu.name);
+      alert("EXCEL VERİTABANI OLUŞTURULDU VE BAĞLANDI!");
+    } catch (err) {
+      if (err.name !== 'AbortError') alert("DOSYA OLUŞTURULAMADI: " + err.message);
+    }
+  }
+
+  async function mevcutExcelBagla() {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: 'Excel Dosyası', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
+      });
+      dosyaTutucu = handle;
+      const file = await dosyaTutucu.getFile();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+
+      if (wb.Sheets["Birlikler"]) {
+        const okunanBirlikler = XLSX.utils.sheet_to_json(wb.Sheets["Birlikler"]).map(r => buyukHarfTr(r["Birlik Adı"] || "")).filter(Boolean);
+        if (okunanBirlikler.length > 0) birlikListesi = okunanBirlikler;
+      }
+      if (wb.Sheets["Atis_Yerleri"]) {
+        const okunanYerler = XLSX.utils.sheet_to_json(wb.Sheets["Atis_Yerleri"]).map(r => buyukHarfTr(r["Atış Yeri"] || "")).filter(Boolean);
+        if (okunanYerler.length > 0) atisYeriListesi = okunanYerler;
+      }
+      if (wb.Sheets["Gozlemciler"]) {
+        gozlemciListesi = XLSX.utils.sheet_to_json(wb.Sheets["Gozlemciler"]).map((r, i) => ({
+          id: r.ID || Date.now() + i,
+          rutbe: buyukHarfTr(r["Rütbe"] || r.Rutbe || "UZM.ÇVŞ"),
+          ad: buyukHarfTr(r["Adı Soyadı"] || r.AdSoyad || ""),
+          sicil: String(r["Sicil No"] || r.Sicil || "").replace(/\D/g, ''),
+          kayitTarihi: r["Kayıt Tarihi"] || "-"
+        }));
+      }
+      if (wb.Sheets["Personel"]) {
+        personelListesi = XLSX.utils.sheet_to_json(wb.Sheets["Personel"]).map((r, i) => ({
+          id: r.ID || Date.now() + i + 1000,
+          rutbe: buyukHarfTr(r["Rütbe"] || r.Rutbe || "ER"),
+          ad: buyukHarfTr(r["Adı Soyadı"] || r.AdSoyad || ""),
+          sicil: String(r["Sicil No"] || r.Sicil || "").replace(/\D/g, ''),
+          kayitTarihi: r["Kayıt Tarihi"] || "-"
+        }));
+      }
+      if (wb.Sheets["Atis_Kayitlari"]) {
+        atisArsivi = XLSX.utils.sheet_to_json(wb.Sheets["Atis_Kayitlari"]).map(r => ({
+          faaliyetKod: buyukHarfTr(r["Faaliyet No"] || "ATS-2026-0001"),
+          faaliyetAdi: buyukHarfTr(r["Faaliyet Adı"] || "ATIŞ EĞİTİMİ"),
+          tarih: r["Atış Tarihi"] || "",
+          sira: r["Sıra No"] || 1,
+          yol: r["Yol No"] || 1,
+          rutbe: buyukHarfTr(r["Rütbe"] || ""),
+          ad: buyukHarfTr(r["Adı Soyadı"] || ""),
+          sicil: String(r["Sicil No"] || "").replace(/\D/g, ''),
+          gozlemci: buyukHarfTr(r["Gözlemci"] || ""),
+          atilanMermi: Number(r["Atılan Fişek"] || 0),
+          isabet: Number(r["İsabet"] || 0),
+          puan100: Number(r["100 Üzerinden Puan"] || 0),
+          durum: buyukHarfTr(r["Katılım Durumu"] || "HAZIR"),
+          gecmis: []
+        }));
+      }
+      await exceleKaydet();
+      yerelHafizayaKaydet();
+      baglantiDurumunuGuncelle(dosyaTutucu.name);
+      adminListeleriniCiz();
+      gozlemciTablosunuCiz();
+      selectListeleriniDoldur();
+      personelTablosunuCiz();
+      arsivTablosunuCiz();
+    } catch (err) {
+      if (err.name !== 'AbortError') alert("EXCEL OKUNAMADI: " + err.message);
+    }
+  }
+
+  async function exceleKaydet() {
+    yerelHafizayaKaydet();
+    if (!dosyaTutucu) return false;
+
+    const wb = XLSX.utils.book_new();
+
+    const wsBirlik = XLSX.utils.json_to_sheet(birlikListesi.map((b, i) => ({ "Sıra": i + 1, "Birlik Adı": buyukHarfTr(b) })));
+    wsBirlik['!cols'] = [{ wch: 6 }, { wch: 35 }];
+    XLSX.utils.book_append_sheet(wb, wsBirlik, "Birlikler");
+
+    const wsYer = XLSX.utils.json_to_sheet(atisYeriListesi.map((y, i) => ({ "Sıra": i + 1, "Atış Yeri": buyukHarfTr(y) })));
+    wsYer['!cols'] = [{ wch: 6 }, { wch: 35 }];
+    XLSX.utils.book_append_sheet(wb, wsYer, "Atis_Yerleri");
+
+    const wsGozlemci = XLSX.utils.json_to_sheet(gozlemciListesi.map((g, i) => ({
+      "Sıra": i + 1, "ID": g.id, "Rütbe": buyukHarfTr(g.rutbe), "Adı Soyadı": buyukHarfTr(g.ad), "Sicil No": String(g.sicil), "Kayıt Tarihi": g.kayitTarihi
+    })));
+    wsGozlemci['!cols'] = [{ wch: 6 }, { wch: 15 }, { wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, wsGozlemci, "Gozlemciler");
+
+    const wsPersonel = XLSX.utils.json_to_sheet(personelListesi.map((p, i) => ({
+      "Sıra": i + 1, "ID": p.id, "Rütbe": buyukHarfTr(p.rutbe), "Adı Soyadı": buyukHarfTr(p.ad), "Sicil No": String(p.sicil), "Kayıt Tarihi": p.kayitTarihi
+    })));
+    wsPersonel['!cols'] = [{ wch: 6 }, { wch: 15 }, { wch: 12 }, { wch: 24 }, { wch: 16 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, wsPersonel, "Personel");
+
+    const wsAtis = XLSX.utils.json_to_sheet(atisArsivi.map((a, i) => ({
+      "Kayıt No": i + 1, "Faaliyet No": buyukHarfTr(a.faaliyetKod), "Faaliyet Adı": buyukHarfTr(a.faaliyetAdi), "Atış Tarihi": a.tarih,
+      "Sıra No": a.sira, "Yol No": a.yol, "Rütbe": buyukHarfTr(a.rutbe), "Adı Soyadı": buyukHarfTr(a.ad), "Sicil No": String(a.sicil),
+      "Gözlemci": buyukHarfTr(a.gozlemci), "Atılan Fişek": a.atilanMermi, "İsabet": a.isabet, "100 Üzerinden Puan": a.puan100, "Katılım Durumu": buyukHarfTr(a.durum)
+    })));
+    wsAtis['!cols'] = [{ wch: 9 }, { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 22 }, { wch: 15 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 18 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, wsAtis, "Atis_Kayitlari");
+
+    const toplamSarf = atisArsivi.reduce((t, a) => t + (a.durum === 'HAZIR' ? a.atilanMermi : 0), 0);
+    const toplamIsabet = atisArsivi.reduce((t, a) => t + a.isabet, 0);
+    const wsOzet = XLSX.utils.json_to_sheet([
+      { "Bilgi": "SON FAALİYET", "Değer": buyukHarfTr(`${aktifFaaliyet.kod} - ${aktifFaaliyet.adi}`) },
+      { "Bilgi": "BİRLİK / POLİGON", "Değer": buyukHarfTr(`${aktifFaaliyet.birlik} / ${aktifFaaliyet.yer}`) },
+      { "Bilgi": "ATIŞ SORUMLUSU", "Değer": buyukHarfTr(aktifFaaliyet.sorumlu) },
+      { "Bilgi": "TOPLAM SARF EDİLEN MÜHİMMAT", "Değer": toplamSarf + " ADET" },
+      { "Bilgi": "TOPLAM İSABET", "Değer": toplamIsabet + " İSABET" },
+      { "Bilgi": "GÜNCELLEME ZAMANI", "Değer": cihazSaatiniAl() }
+    ]);
+    wsOzet['!cols'] = [{ wch: 30 }, { wch: 35 }];
+    XLSX.utils.book_append_sheet(wb, wsOzet, "Muhimmat_ve_Ozet");
+
+    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const writable = await dosyaTutucu.createWritable();
+    await writable.write(buffer);
+    await writable.close();
+    return true;
+  }
+
+  function baglantiDurumunuGuncelle(dosyaAdi) {
+    const bar = document.getElementById('excelDurumBar');
+    bar.classList.remove('alert-secondary');
+    bar.classList.add('alert-dark');
+    document.getElementById('bagliDosyaAdi').innerHTML = `<i class="bi bi-check-circle-fill"></i> BAĞLI EXCEL VERİTABANI: ${buyukHarfTr(dosyaAdi)}`;
+    document.getElementById('bagliDosyaAciklama').innerText = "TÜM KAYITLAR DOĞRUDAN BU DOSYAYA BÜYÜK HARFLE YAZILIYOR.";
+  }
+
+
+  // =========================================================================
+  // 3. SEKME GEÇİŞLERİ VE GERİ DÖNME GEÇMİŞİ
+  // =========================================================================
+  function sekmeAc(sekmeAdi, btnElement, gecmiseEkle = true) {
+    if (gecmiseEkle && aktifSekmeAdi && aktifSekmeAdi !== sekmeAdi) {
+      sayfaGecmisi.push(aktifSekmeAdi);
+    }
+    aktifSekmeAdi = sekmeAdi;
+
+    document.querySelectorAll('.ekran-bolumu').forEach(el => el.classList.remove('aktif'));
+    document.getElementById('sekme-' + sekmeAdi).classList.add('aktif');
+
+    document.querySelectorAll('.nav-item-btn').forEach(btn => btn.classList.remove('active'));
+    const hedefBtn = btnElement || document.querySelector(`[data-sekme=${sekmeAdi}]`);
+    if (hedefBtn) hedefBtn.classList.add('active');
+
+    if (sekmeAdi === 'atis') selectListeleriniDoldur();
+    if (sekmeAdi === 'personel') personelTablosunuCiz();
+    if (sekmeAdi === 'gozlemciler') gozlemciTablosunuCiz();
+    if (sekmeAdi === 'arsiv') arsivTablosunuCiz();
+    if (sekmeAdi === 'admin') adminListeleriniCiz();
+  }
+
+  function oncekiSayfayaDon() {
+    if (sayfaGecmisi.length > 0) {
+      const onceki = sayfaGecmisi.pop();
+      sekmeAc(onceki, null, false);
+    } else {
+      sekmeAc('anaekran', null, false);
+    }
+  }
+
+
+  // =========================================================================
+  // 4. ADMİN PANELİ: BİRLİK VE ATIŞ YERİ YÖNETİMİ
+  // =========================================================================
+  document.getElementById('birlikFormu').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const val = buyukHarfTr(document.getElementById('yeniBirlikInput').value.trim());
+    if (!val) {
+      alert("BİRLİK ADI BOŞ BIRAKILAMAZ (NOT NULL)!");
+      return;
+    }
+    if (birlikListesi.includes(val)) {
+      alert("BU BİRLİK ZATEN KAYITLI!");
+      return;
+    }
+    birlikListesi.push(val);
+    document.getElementById('yeniBirlikInput').value = "";
+    await exceleKaydet();
+    adminListeleriniCiz();
+    selectListeleriniDoldur();
+  });
+
+  async function birlikSil(index) {
+    if (!confirm("BU BİRLİK KAYDI SİLİNSİN Mİ?")) return;
+    birlikListesi.splice(index, 1);
+    await exceleKaydet();
+    adminListeleriniCiz();
+    selectListeleriniDoldur();
+  }
+
+  document.getElementById('atisYeriFormu').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const val = buyukHarfTr(document.getElementById('yeniAtisYeriInput').value.trim());
+    if (!val) {
+      alert("ATIŞ YERİ / POLİGON ADI BOŞ BIRAKILAMAZ (NOT NULL)!");
+      return;
+    }
+    if (atisYeriListesi.includes(val)) {
+      alert("BU ATIŞ YERİ ZATEN KAYITLI!");
+      return;
+    }
+    atisYeriListesi.push(val);
+    document.getElementById('yeniAtisYeriInput').value = "";
+    await exceleKaydet();
+    adminListeleriniCiz();
+    selectListeleriniDoldur();
+  });
+
+  async function atisYeriSil(index) {
+    if (!confirm("BU ATIŞ YERİ KAYDI SİLİNSİN Mİ?")) return;
+    atisYeriListesi.splice(index, 1);
+    await exceleKaydet();
+    adminListeleriniCiz();
+    selectListeleriniDoldur();
+  }
+
+  function adminListeleriniCiz() {
+    const bTbody = document.getElementById('birlikTabloGovde');
+    bTbody.innerHTML = birlikListesi.length === 0
+      ? `<tr><td colspan="3" class="text-center py-3 text-muted">HENÜZ BİRLİK KAYDI YOK.</td></tr>`
+      : birlikListesi.map((b, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td class="fw-bold">${buyukHarfTr(b)}</td>
+          <td class="text-center"><button onclick="birlikSil(${i})" class="btn btn-dark btn-sm py-0 px-2">SİL</button></td>
+        </tr>`).join('');
+
+    const yTbody = document.getElementById('atisYeriTabloGovde');
+    yTbody.innerHTML = atisYeriListesi.length === 0
+      ? `<tr><td colspan="3" class="text-center py-3 text-muted">HENÜZ ATIŞ YERİ KAYDI YOK.</td></tr>`
+      : atisYeriListesi.map((y, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td class="fw-bold">${buyukHarfTr(y)}</td>
+          <td class="text-center"><button onclick="atisYeriSil(${i})" class="btn btn-dark btn-sm py-0 px-2">SİL</button></td>
+        </tr>`).join('');
+  }
+
+  function selectListeleriniDoldur() {
+    const selBirlik = document.getElementById('fBirlikSelect');
+    const selYer = document.getElementById('fYerSelect');
+    const selAtisSorumlu = document.getElementById('fSorumluSelect');
+
+    if (selBirlik) {
+      const mevcutB = selBirlik.value || aktifFaaliyet.birlik;
+      selBirlik.innerHTML = birlikListesi.length === 0
+        ? `<option value="">-- ADMİN SAYFASINDAN BİRLİK EKLEYİN --</option>`
+        : `<option value="">-- BİRLİK SEÇİNİZ --</option>` + birlikListesi.map(b => `<option value="${buyukHarfTr(b)}">${buyukHarfTr(b)}</option>`).join('');
+      if (mevcutB && birlikListesi.includes(mevcutB)) selBirlik.value = mevcutB;
+    }
+
+    if (selYer) {
+      const mevcutY = selYer.value || aktifFaaliyet.yer;
+      selYer.innerHTML = atisYeriListesi.length === 0
+        ? `<option value="">-- ADMİN SAYFASINDAN ATIŞ YERİ EKLEYİN --</option>`
+        : `<option value="">-- ATIŞ YERİ SEÇİNİZ --</option>` + atisYeriListesi.map(y => `<option value="${buyukHarfTr(y)}">${buyukHarfTr(y)}</option>`).join('');
+      if (mevcutY && atisYeriListesi.includes(mevcutY)) selYer.value = mevcutY;
+    }
+
+    if (selAtisSorumlu) {
+      const mevcutS = selAtisSorumlu.value || aktifFaaliyet.sorumlu;
+      if (gozlemciListesi.length === 0) {
+        selAtisSorumlu.innerHTML = `<option value="">-- ÖNCE GÖZLEMCİLER SEKMESİNDEN EKLEYİN --</option>`;
+      } else {
+        selAtisSorumlu.innerHTML = `<option value="">-- KAYITLI GÖZLEMCİ SEÇİNİZ --</option>` +
+          gozlemciListesi.map(g => {
+            const val = buyukHarfTr(`${g.rutbe} ${g.ad} (${g.sicil})`);
+            return `<option value="${val}">${val}</option>`;
+          }).join('');
+        if (mevcutS) selAtisSorumlu.value = mevcutS;
+      }
+    }
+  }
+
+
+  // =========================================================================
+  // 5. YENİ ATIŞ SİHİRBAZI (ADIM 1 -> ADIM 2 -> ADIM 3 -> YOKLAMA & ATIŞ)
+  // =========================================================================
+  function yeniFaaliyetSihirbaziAc() {
+    document.getElementById('yeniFaaliyetKodu').innerText = `ATS-2026-${String(atisArsivi.length + 1).padStart(4, '0')}`;
+    sekmeAc('atis', document.querySelector('[data-sekme=atis]'));
+    atisAdimGec(1);
+  }
+
+  function secenekSec(grupId, btn) {
+    document.querySelectorAll(`#${grupId} .secenek-btn`).forEach(b => b.classList.remove('aktif'));
+    btn.classList.add('aktif');
+  }
+
+  function atisAdimGec(adimNo) {
+    if (adimNo === 2) {
+      const seciliBirlik = document.getElementById('fBirlikSelect').value;
+      const seciliYer = document.getElementById('fYerSelect').value;
+      const seciliSorumlu = document.getElementById('fSorumluSelect').value;
+
+      if (!seciliBirlik) {
+        alert("LÜTFEN BİRLİK SEÇİN! (LİSTE BOŞSA ADMİN SAYFASINDAN BİRLİK EKLEYİN)");
+        return;
+      }
+      if (!seciliYer) {
+        alert("LÜTFEN ATIŞ YERİ SEÇİN! (LİSTE BOŞSA ADMİN SAYFASINDAN ATIŞ YERİ EKLEYİN)");
+        return;
+      }
+      if (!seciliSorumlu) {
+        alert("LÜTFEN KAYITLI GÖZLEMCİLER ARASINDAN BİR ATIŞ SORUMLUSU / GÖZLEMCİ SEÇİN!");
+        return;
+      }
+
+      aktifFaaliyet.kod = buyukHarfTr(document.getElementById('yeniFaaliyetKodu').innerText);
+      aktifFaaliyet.adi = buyukHarfTr(document.getElementById('fAdi').value.trim() || "ATIŞ EĞİTİMİ");
+      aktifFaaliyet.birlik = buyukHarfTr(seciliBirlik);
+      aktifFaaliyet.yer = buyukHarfTr(seciliYer);
+      aktifFaaliyet.sorumlu = buyukHarfTr(seciliSorumlu);
+      aktifFaaliyet.zaman = buyukHarfTr(document.querySelector('#grpZaman .aktif').innerText);
+      aktifFaaliyet.hedef = buyukHarfTr(document.querySelector('#grpHedef .aktif').innerText);
+      aktifFaaliyet.amac = buyukHarfTr(document.querySelector('#grpAmac .aktif').innerText);
+      aktifFaaliyet.mermi = Number(document.getElementById('fMermi').value) || 3;
+      aktifFaaliyet.yolSayisi = Math.min(10, Math.max(1, Number(document.getElementById('fYolSayisi').value) || 10));
+
+      yolGozlemciAtamaCiz();
+    }
+
+    [1, 2, 3, 4].forEach(n => document.getElementById('atis-adim-' + n).style.display = 'none');
+    document.getElementById('atis-adim-' + adimNo).style.display = 'block';
+
+    if (adimNo === 1) {
+      selectListeleriniDoldur();
+      document.getElementById('fAdi').value = buyukHarfTr(aktifFaaliyet.adi);
+      if (aktifFaaliyet.birlik) document.getElementById('fBirlikSelect').value = aktifFaaliyet.birlik;
+      if (aktifFaaliyet.yer) document.getElementById('fYerSelect').value = aktifFaaliyet.yer;
+      if (aktifFaaliyet.sorumlu) document.getElementById('fSorumluSelect').value = aktifFaaliyet.sorumlu;
+      document.getElementById('fMermi').value = aktifFaaliyet.mermi;
+      document.getElementById('fYolSayisi').value = aktifFaaliyet.yolSayisi;
+    }
+
+    if (adimNo === 3) {
+      adim3PersonelListesiCiz();
+    }
+  }
+
+  function yolGozlemciAtamaCiz() {
+    const alan = document.getElementById('yolGozlemciAtamaAlani');
+    alan.innerHTML = '';
+
+    for (let y = 1; y <= aktifFaaliyet.yolSayisi; y++) {
+      if (!yolGozlemcileri[y] && gozlemciListesi.length > 0) {
+        const g = gozlemciListesi[(y - 1) % gozlemciListesi.length];
+        yolGozlemcileri[y] = buyukHarfTr(`${g.rutbe} ${g.ad}`);
+      }
+
+      let secenekler = `<option value="ATANMADI">-- GÖZLEMCİ SEÇ --</option>`;
+      gozlemciListesi.forEach(g => {
+        const tamAd = buyukHarfTr(`${g.rutbe} ${g.ad}`);
+        const secili = yolGozlemcileri[y] === tamAd ? 'selected' : '';
+        secenekler += `<option value="${tamAd}" ${secili}>${tamAd}</option>`;
+      });
+
+      alan.innerHTML += `
+        <div class="col">
+          <div class="border rounded p-2">
+            <span class="badge bg-dark mb-1">YOL ${y}</span>
+            <select class="form-select form-select-sm fw-bold" onchange="yolGozlemcileri[${y}] = this.value">
+              ${secenekler}
+            </select>
+          </div>
+        </div>`;
+    }
+  }
+
+  function adim3PersonelListesiCiz() {
+    document.getElementById('adim3KisiSayisi').innerText = personelListesi.length;
+    const tbody = document.getElementById('adim3PersonelTablo');
+    tbody.innerHTML = '';
+
+    if (personelListesi.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">HENÜZ PERSONEL KAYDI YOK. ÖNCE PERSONEL SEKMESİNDEN ASKER EKLEYİN.</td></tr>`;
+      return;
+    }
+
+    personelListesi.forEach((p, idx) => {
+      const yolNo = (idx % aktifFaaliyet.yolSayisi) + 1;
+      const goz = buyukHarfTr(yolGozlemcileri[yolNo] || "ATANMADI");
+      tbody.innerHTML += `
+        <tr>
+          <td class="fw-bold">${idx + 1}</td>
+          <td class="fw-bold">${buyukHarfTr(p.ad)}</td>
+          <td>${buyukHarfTr(p.rutbe)}</td>
+          <td>${String(p.sicil)}</td>
+          <td><span class="badge bg-secondary">YOL ${yolNo}</span></td>
+          <td>${goz}</td>
+        </tr>`;
+    });
+  }
+
+  function atisiBaslat() {
+    if (personelListesi.length === 0) return alert("ATIŞ BAŞLATMAK İÇİN EN AZ 1 PERSONEL KAYITLI OLMALIDIR!");
+    atisKuyrugu = personelListesi.map((p, idx) => ({
+      ...p,
+      atananGozlemci: buyukHarfTr(yolGozlemcileri[(idx % aktifFaaliyet.yolSayisi) + 1] || "ATANMADI")
+    }));
+    siraNumarasi = 1;
+    bitenSayisi = 0;
+    aktifFaaliyet.baslamaZamani = cihazSaatiniAl();
+
+    atisAdimGec(4);
+    siradakiGrubuYollaraYerlestir();
+  }
+
+
+  // =========================================================================
+  // 6. YOKLAMA VE 10 YOL CANLI ATIŞ EKRANI
+  // =========================================================================
+  function siradakiGrubuYollaraYerlestir() {
+    const yolSayisi = aktifFaaliyet.yolSayisi;
+    if (atisKuyrugu.length === 0) {
+      alert("TÜM PERSONELİN ATIŞI TAMAMLANDI! ARŞİV SEKMESİNDEN İMZA ATIP RAPOR ALABİLİRSİNİZ.");
+      yerelHafizayaKaydet();
+      sekmeAc('arsiv', document.querySelector('[data-sekme=arsiv]'));
+      return;
+    }
+
+    atisBasladiMi = false;
+    sonYoklamaYedek = null;
+    document.getElementById('aktifSiraNo').innerText = siraNumarasi;
+    document.getElementById('statBiten').innerText = bitenSayisi;
+    document.getElementById('statToplam').innerText = bitenSayisi + atisKuyrugu.length;
+    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - yolSayisi);
+
+    document.getElementById('rozetAsama1').className = "badge bg-dark";
+    document.getElementById('rozetAsama2').className = "badge bg-secondary";
+    document.getElementById('btnSirayiBaslat').style.display = "inline-block";
+    document.getElementById('btnSirayiTamamla').style.display = "none";
+    document.getElementById('atisYonergeMetni').innerText = "HERKES HAZIR SAYILIR. GELMEYEN VARSA GELMEDİ'YE BASIN; YERİNE SIRADAKİ GELİR. SONRA SIRAYI BAŞLAT.";
+
+    aktifYollar = [];
+    for (let i = 0; i < yolSayisi; i++) {
+      const kisi = atisKuyrugu[i] || null;
+      aktifYollar.push({
+        yol: i + 1,
+        kisi: kisi,
+        gozlemci: kisi ? buyukHarfTr(yolGozlemcileri[i + 1] || kisi.atananGozlemci) : "",
+        isabet: null,
+        not: "",
+        gecmis: [],
+        degisimBilgisi: null
+      });
+    }
+
+    siradakiGrupSeridiCiz();
+    yolKartlariniCiz();
+    yerelHafizayaKaydet();
+  }
+
+  function siradakiGrupSeridiCiz() {
+    const yolSayisi = aktifFaaliyet.yolSayisi;
+    const bekleyenler = atisKuyrugu.slice(yolSayisi, yolSayisi + 10);
+    const div = document.getElementById('siradakiGrupContainer');
+
+    if (bekleyenler.length === 0) {
+      div.innerHTML = `<span class="text-muted">ARKADA BEKLEYEN BAŞKA GRUP YOK.</span>`;
+      return;
+    }
+
+    let html = '';
+    for (let c = 0; c < 5; c++) {
+      const k1 = bekleyenler[c] ? `<b>${c + 1}</b> ${buyukHarfTr(bekleyenler[c].ad)}` : '';
+      const k2 = bekleyenler[c + 5] ? `<b>${c + 6}</b> ${buyukHarfTr(bekleyenler[c + 5].ad)}` : '';
+      html += `<div class="col">${k1}<br>${k2}</div>`;
+    }
+    div.innerHTML = html;
+  }
+
+  function yolKartlariniCiz() {
+    const container = document.getElementById('yollarContainer');
+    container.innerHTML = '';
+
+    aktifYollar.forEach((item, index) => {
+      if (!item.kisi) {
+        container.innerHTML += `
+          <div class="col">
+            <div class="yol-kart opacity-50 h-100">
+              <span class="yol-badge bg-secondary">YOL ${item.yol}</span>
+              <div class="text-center text-muted my-4">BOŞ YOL</div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      if (!atisBasladiMi) {
+        container.innerHTML += `
+          <div class="col">
+            <div class="yol-kart h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="yol-badge">YOL ${item.yol}</span>
+                </div>
+                <div class="fw-bold text-truncate">${buyukHarfTr(item.kisi.ad)}</div>
+                <div class="text-muted small">${buyukHarfTr(item.kisi.rutbe)} &nbsp; ${String(item.kisi.sicil)}</div>
+                <div class="text-secondary small text-truncate fw-bold">GÖZLEMCİ: ${buyukHarfTr(item.gozlemci)}</div>
+                ${item.degisimBilgisi ? `<div class="text-dark small mt-1 fw-bold">${item.degisimBilgisi} <a href="#" class="text-secondary" onclick="yoklamaGeriAl(event)">GERİ AL</a></div>` : ''}
+              </div>
+              <div class="d-flex gap-1 mt-3">
+                <button onclick="yoldaGelmedi(${index}, 'GELMEDİ')" class="btn btn-outline-dark btn-sm w-100 fw-bold">GELMEDİ</button>
+                <button onclick="yoldaGelmedi(${index}, 'RAPORLU / İZİNLİ')" class="btn btn-light border btn-sm w-100">DURUM</button>
+              </div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const kayitliMi = item.isabet !== null;
+      const gosterilenSkor = kayitliMi ? item.isabet : '—';
+
+      container.innerHTML += `
+        <div class="col">
+          <div class="yol-kart">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="yol-badge">YOL ${item.yol}</span>
+              <button onclick="duzeltModalAc(${index})" class="btn btn-light border btn-sm py-0 px-2 fw-bold">DÜZELT</button>
+            </div>
+            <div class="fw-bold text-truncate">${buyukHarfTr(item.kisi.ad)}</div>
+            <div class="text-muted small">${buyukHarfTr(item.kisi.rutbe)} &nbsp; ${String(item.kisi.sicil)}</div>
+            <div class="text-secondary small text-truncate fw-bold">GÖZLEMCİ: ${buyukHarfTr(item.gozlemci)}</div>
+
+            <div onclick="isabetArtir(${index})" class="skor-kutusu ${kayitliMi ? 'kaydedildi' : ''}">
+              <div>
+                <span class="skor-rakam">${gosterilenSkor}</span>
+                <span class="skor-toplam">/ ${aktifFaaliyet.mermi}</span>
+              </div>
+              <div class="small fw-bold ${kayitliMi ? 'text-dark' : 'text-muted'}">
+                ${kayitliMi ? 'KAYDEDİLDİ' : 'İSABET SAYISI'}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+
+  function yoldaGelmedi(yolIndex, sebep) {
+    sonYoklamaYedek = JSON.parse(JSON.stringify({ atisKuyrugu, aktifYollar }));
+    const gelenKisi = aktifYollar[yolIndex].kisi;
+
+    atisArsivi.unshift({
+      faaliyetKod: buyukHarfTr(aktifFaaliyet.kod),
+      faaliyetAdi: buyukHarfTr(aktifFaaliyet.adi),
+      tarih: cihazSaatiniAl(),
+      sira: siraNumarasi,
+      yol: aktifYollar[yolIndex].yol,
+      rutbe: buyukHarfTr(gelenKisi.rutbe),
+      ad: buyukHarfTr(gelenKisi.ad),
+      sicil: String(gelenKisi.sicil),
+      gozlemci: buyukHarfTr(aktifYollar[yolIndex].gozlemci),
+      atilanMermi: 0,
+      isabet: 0,
+      puan100: 0,
+      durum: buyukHarfTr(sebep),
+      gecmis: []
+    });
+
+    atisKuyrugu = atisKuyrugu.filter(k => k.id !== gelenKisi.id);
+
+    const yolSayisi = aktifFaaliyet.yolSayisi;
+    const yedekKisi = atisKuyrugu[yolSayisi - 1] || null;
+    aktifYollar[yolIndex].kisi = yedekKisi;
+    aktifYollar[yolIndex].degisimBilgisi = `${buyukHarfTr(sebep)}: ${buyukHarfTr(gelenKisi.ad.split(' ')[0])}...`;
+
+    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - yolSayisi);
+    siradakiGrupSeridiCiz();
+    yolKartlariniCiz();
+    exceleKaydet();
+  }
+
+  function yoklamaGeriAl(e) {
+    e.preventDefault();
+    if (!sonYoklamaYedek) return;
+    atisKuyrugu = sonYoklamaYedek.atisKuyrugu;
+    aktifYollar = sonYoklamaYedek.aktifYollar;
+    atisArsivi.shift();
+    sonYoklamaYedek = null;
+    siradakiGrupSeridiCiz();
+    yolKartlariniCiz();
+    exceleKaydet();
+  }
+
+  function siradakiGrupModalAc() {
+    const yolSayisi = aktifFaaliyet.yolSayisi;
+    const bekleyenler = atisKuyrugu.slice(yolSayisi, yolSayisi + 10);
+    const icerik = document.getElementById('siradakiGrupModalIcerik');
+
+    if (bekleyenler.length === 0) {
+      icerik.innerHTML = `<p class="text-muted">SIRADAKİ GRUPTA BEKLEYEN PERSONEL YOK.</p>`;
+    } else {
+      icerik.innerHTML = bekleyenler.map((k, i) => `
+        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+          <div><span class="badge bg-dark me-2">YOL ${i + 1}</span> <b>${buyukHarfTr(k.ad)}</b> <small class="text-muted">(${buyukHarfTr(k.rutbe)} • ${String(k.sicil)})</small></div>
+          <div class="d-flex gap-1">
+            <button onclick="siradakiGruptanCikar('${k.id}', 'GELMEDİ')" class="btn btn-outline-dark btn-sm">GELMEDİ</button>
+            <button onclick="siradakiGruptanCikar('${k.id}', 'RAPORLU')" class="btn btn-outline-secondary btn-sm">RAPORLU</button>
+            <button onclick="siradakiGruptanCikar('${k.id}', 'İZİNLİ')" class="btn btn-outline-secondary btn-sm">İZİNLİ</button>
+          </div>
+        </div>`).join('');
+    }
+    new bootstrap.Modal(document.getElementById('siradakiGrupModal')).show();
+  }
+
+  function siradakiGruptanCikar(kisiId, sebep) {
+    const kisi = atisKuyrugu.find(k => String(k.id) === String(kisiId));
+    if (!kisi) return;
+
+    atisArsivi.unshift({
+      faaliyetKod: buyukHarfTr(aktifFaaliyet.kod), faaliyetAdi: buyukHarfTr(aktifFaaliyet.adi), tarih: cihazSaatiniAl(),
+      sira: siraNumarasi + 1, yol: "-", rutbe: buyukHarfTr(kisi.rutbe), ad: buyukHarfTr(kisi.ad), sicil: String(kisi.sicil),
+      gozlemci: "-", atilanMermi: 0, isabet: 0, puan100: 0, durum: buyukHarfTr(sebep), gecmis: []
+    });
+
+    atisKuyrugu = atisKuyrugu.filter(k => String(k.id) !== String(kisiId));
+    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - aktifFaaliyet.yolSayisi);
+    siradakiGrupSeridiCiz();
+    siradakiGrupModalAc();
+    exceleKaydet();
+  }
+
+  function sirayiBaslat() {
+    atisBasladiMi = true;
+    document.getElementById('rozetAsama1').className = "badge bg-secondary";
+    document.getElementById('rozetAsama2').className = "badge bg-dark";
+    document.getElementById('btnSirayiBaslat').style.display = "none";
+    document.getElementById('btnSirayiTamamla').style.display = "inline-block";
+    document.getElementById('atisYonergeMetni').innerText = "HER İSABETTE O YOLUN KUTUSUNA BİR KEZ DOKUNUN. ATIŞ BİTİNCE SIRAYI TAMAMLA DEYİN.";
+    yolKartlariniCiz();
+    yerelHafizayaKaydet();
+  }
+
+  function isabetArtir(index) {
+    const item = aktifYollar[index];
+    const eski = item.isabet === null ? "—" : item.isabet;
+    if (item.isabet === null) item.isabet = 1;
+    else if (item.isabet < aktifFaaliyet.mermi) item.isabet += 1;
+    else return;
+
+    item.gecmis.unshift(`${cihazSaatiniAl()} İSABET ${eski} → ${item.isabet}`);
+    yolKartlariniCiz();
+    yerelHafizayaKaydet();
+  }
+
+
+  // =========================================================================
+  // 7. DÜZELTME VE İŞLEM GEÇMİŞİ MODALI
+  // =========================================================================
+  function duzeltModalAc(index) {
+    const item = aktifYollar[index];
+    document.getElementById('duzeltYolIndex').value = index;
+    document.getElementById('duzeltBaslik').innerText = `YOL ${item.yol} • ${buyukHarfTr(item.kisi.ad)}`;
+    document.getElementById('duzeltMevcutSkor').innerText = item.isabet === null ? 0 : item.isabet;
+    document.getElementById('duzeltYeniSayi').value = item.isabet === null ? 0 : item.isabet;
+    document.getElementById('duzeltNotInput').value = buyukHarfTr(item.not || "");
+    duzeltGecmisYenile(item);
+    new bootstrap.Modal(document.getElementById('duzeltModal')).show();
+  }
+
+  function duzeltGecmisYenile(item) {
+    const div = document.getElementById('duzeltGecmisListesi');
+    div.innerHTML = item.gecmis.length === 0 ? "HENÜZ DEĞİŞİKLİK KAYDI YOK." : item.gecmis.map(g => `<div>• ${buyukHarfTr(g)}</div>`).join('');
+  }
+
+  function duzeltEksiBir() {
+    const idx = Number(document.getElementById('duzeltYolIndex').value);
+    const item = aktifYollar[idx];
+    const eski = item.isabet || 0;
+    if (eski <= 0) return;
+    item.isabet = eski - 1;
+    item.gecmis.unshift(`${cihazSaatiniAl()} DÜZELTME (-1): ${eski} → ${item.isabet}`);
+    document.getElementById('duzeltMevcutSkor').innerText = item.isabet;
+    duzeltGecmisYenile(item);
+    yolKartlariniCiz();
+    yerelHafizayaKaydet();
+  }
+
+  function duzeltSayiYaz() {
+    const idx = Number(document.getElementById('duzeltYolIndex').value);
+    const item = aktifYollar[idx];
+    const yeni = Math.min(aktifFaaliyet.mermi, Math.max(0, Number(document.getElementById('duzeltYeniSayi').value)));
+    const eski = item.isabet === null ? "—" : item.isabet;
+    item.isabet = yeni;
+    item.gecmis.unshift(`${cihazSaatiniAl()} DÜZELTME: ${eski} → ${yeni}`);
+    document.getElementById('duzeltMevcutSkor').innerText = yeni;
+    duzeltGecmisYenile(item);
+    yolKartlariniCiz();
+    yerelHafizayaKaydet();
+  }
+
+  function duzeltNotEkle() {
+    const idx = Number(document.getElementById('duzeltYolIndex').value);
+    const item = aktifYollar[idx];
+    const notMetni = buyukHarfTr(document.getElementById('duzeltNotInput').value.trim());
+    if (!notMetni) return;
+    item.not = notMetni;
+    item.gecmis.unshift(`${cihazSaatiniAl()} NOT: "${notMetni}"`);
+    duzeltGecmisYenile(item);
+    yerelHafizayaKaydet();
+  }
+
+
+  // =========================================================================
+  // 8. SIRA TAMAMLAMA SON KONTROLÜ
+  // =========================================================================
+  function siraTamamlaOnayAc() {
+    document.getElementById('siraTamamlaBaslik').innerText = `${siraNumarasi}. SIRA TAMAMLANSIN MI?`;
+    const icerik = document.getElementById('siraTamamlaIcerik');
+    let html = '';
+
+    aktifYollar.forEach((item, idx) => {
+      if (!item.kisi) return;
+      if (item.isabet !== null) {
+        html += `<div class="py-1 border-bottom"><b>YOL ${item.yol}</b> - ${buyukHarfTr(item.kisi.ad)} - <span class="text-dark fw-bold">İSABET: ${item.isabet}</span></div>`;
+      } else {
+        item.bosKarar = "0 İSABET";
+        html += `
+          <div class="py-2 border-bottom d-flex justify-content-between align-items-center bg-light px-2 rounded my-1">
+            <div><b>YOL ${item.yol}</b> - ${buyukHarfTr(item.kisi.ad)} <span class="badge bg-secondary">İSABET GİRİLMEDİ</span></div>
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-dark" onclick="bosKararSec(${idx}, '0 İSABET', this)">0 İSABET</button>
+              <button type="button" class="btn btn-outline-secondary" onclick="bosKararSec(${idx}, 'ATIŞ YAPMADI', this)">ATIŞ YAPMADI</button>
+            </div>
+          </div>`;
+      }
+    });
+
+    icerik.innerHTML = html;
+    new bootstrap.Modal(document.getElementById('siraTamamlaModal')).show();
+  }
+
+  function bosKararSec(yolIdx, karar, btn) {
+    aktifYollar[yolIdx].bosKarar = buyukHarfTr(karar);
+    btn.parentElement.querySelectorAll('button').forEach(b => b.className = "btn btn-outline-secondary");
+    btn.className = "btn btn-dark";
+  }
+
+  async function sirayiKesinTamamla() {
+    bootstrap.Modal.getInstance(document.getElementById('siraTamamlaModal')).hide();
+    const tarihSaat = cihazSaatiniAl();
+    let tamamlananKisi = 0;
+
+    aktifYollar.forEach(item => {
+      if (!item.kisi) return;
+      tamamlananKisi++;
+      const atisYaptiMi = item.isabet !== null || item.bosKarar !== 'ATIŞ YAPMADI';
+      const isabet = item.isabet === null ? 0 : item.isabet;
+      const harcanan = atisYaptiMi ? aktifFaaliyet.mermi : 0;
+
+      atisArsivi.unshift({
+        faaliyetKod: buyukHarfTr(aktifFaaliyet.kod),
+        faaliyetAdi: buyukHarfTr(aktifFaaliyet.adi),
+        tarih: tarihSaat,
+        sira: siraNumarasi,
+        yol: item.yol,
+        rutbe: buyukHarfTr(item.kisi.rutbe),
+        ad: buyukHarfTr(item.kisi.ad),
+        sicil: String(item.kisi.sicil),
+        gozlemci: buyukHarfTr(item.gozlemci),
+        atilanMermi: harcanan,
+        isabet: isabet,
+        puan100: atisYaptiMi ? Math.round((isabet / aktifFaaliyet.mermi) * 100) : 0,
+        durum: atisYaptiMi ? 'HAZIR' : 'ATIŞ YAPMADI',
+        gecmis: item.gecmis
+      });
+    });
+
+    atisKuyrugu = atisKuyrugu.slice(tamamlananKisi);
+    bitenSayisi += tamamlananKisi;
+    siraNumarasi++;
+
+    await exceleKaydet();
+    siradakiGrubuYollaraYerlestir();
+  }
+
+  function kanitDosyasiEklendi(input, tur) {
+    if (input.files && input.files[0]) {
+      alert(`${buyukHarfTr(tur)} KAYDEDİLDİ: ${buyukHarfTr(input.files[0].name)} (AKTİF SIRAYA BAĞLANDI).`);
+    }
+  }
+
+
+  // =========================================================================
+  // 9. PERSONEL VE GÖZLEMCİ CRUD İŞLEMLERİ (NOT NULL & 11 HANE SAYI ZORUNLU)
+  // =========================================================================
+  function sicilDogrula(sicilDegeri) {
+    if (!sicilDegeri || sicilDegeri.trim() === "") {
+      alert("UYARI: SİCİL NO ALANI BOŞ BIRAKILAMAZ (NOT NULL)!");
+      return false;
+    }
+    if (!/^\d{11}$/.test(sicilDegeri)) {
+      alert(`UYARI: SİCİL NO SADECE SAYI DEĞERİ OLMALI VE TAM 11 KARAKTER GİRİLMELİDİR! (ŞU AN GİRİLEN: ${sicilDegeri.length} KARAKTER)`);
+      return false;
+    }
+    return true;
+  }
+
+  document.getElementById('gozlemciFormu').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const duzId = document.getElementById('duzenlenenGozlemciId').value;
+    const rutbe = buyukHarfTr(document.getElementById('gRutbe').value);
+    const ad = buyukHarfTr(document.getElementById('gAd').value.trim());
+    const sicil = document.getElementById('gSicil').value.trim();
+
+    if (!ad) {
+      alert("UYARI: GÖZLEMCİ ADI SOYADI BOŞ BIRAKILAMAZ!");
+      document.getElementById('gAd').focus();
+      return;
+    }
+    if (!sicilDogrula(sicil)) {
+      document.getElementById('gSicil').focus();
+      return;
+    }
+
+    if (duzId) {
+      const idx = gozlemciListesi.findIndex(g => String(g.id) === String(duzId));
+      if (idx !== -1) gozlemciListesi[idx] = { ...gozlemciListesi[idx], rutbe, ad, sicil };
+    } else {
+      gozlemciListesi.push({ id: Date.now(), rutbe, ad, sicil, kayitTarihi: cihazSaatiniAl() });
+    }
+    await exceleKaydet();
+    gozlemciFormuTemizle();
+    gozlemciTablosunuCiz();
+    selectListeleriniDoldur();
+  });
+
+  function gozlemciSatirSec(id) {
+    const g = gozlemciListesi.find(i => String(i.id) === String(id));
+    if (!g) return;
+    seciliGozlemciId = g.id;
+    document.getElementById('duzenlenenGozlemciId').value = g.id;
+    document.getElementById('gRutbe').value = buyukHarfTr(g.rutbe);
+    document.getElementById('gAd').value = buyukHarfTr(g.ad);
+    document.getElementById('gSicil').value = String(g.sicil);
+    document.getElementById('btnGozlemciKaydet').innerText = "GÜNCELLE";
+    document.getElementById('btnGozlemciVazgec').style.display = "inline-block";
+    gozlemciTablosunuCiz();
+  }
+
+  function gozlemciFormuTemizle() {
+    seciliGozlemciId = null;
+    document.getElementById('duzenlenenGozlemciId').value = "";
+    document.getElementById('gAd').value = "";
+    document.getElementById('gSicil').value = "";
+    document.getElementById('btnGozlemciKaydet').innerHTML = `<i class="bi bi-save"></i> GÖZLEMCİ KAYDET`;
+    document.getElementById('btnGozlemciVazgec').style.display = "none";
+    gozlemciTablosunuCiz();
+  }
+
+  async function gozlemciSil(e, id) {
+    e.stopPropagation();
+    if (!confirm("GÖZLEMCİ KAYDI SİLİNSİN Mİ?")) return;
+    gozlemciListesi = gozlemciListesi.filter(g => String(g.id) !== String(id));
+    await exceleKaydet();
+    gozlemciTablosunuCiz();
+    selectListeleriniDoldur();
+  }
+
+  function gozlemciTablosunuCiz() {
+    const tbody = document.getElementById('gozlemciTabloGovde');
+    const arama = buyukHarfTr(document.getElementById('gozlemciAramaInput').value);
+    document.getElementById('toplamGozlemciSayisi').innerText = gozlemciListesi.length;
+    const filtre = gozlemciListesi.filter(g => buyukHarfTr(g.ad).includes(arama) || String(g.sicil).includes(arama));
+    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="6" class="text-center py-3 text-muted">KAYIT YOK.</td></tr>` :
+      filtre.map((g, i) => `
+        <tr onclick="gozlemciSatirSec('${g.id}')" class="${String(g.id) === String(seciliGozlemciId) ? 'secili-satir' : ''}">
+          <td>${i + 1}</td>
+          <td><span class="badge bg-secondary">${buyukHarfTr(g.rutbe)}</span></td>
+          <td class="fw-bold">${buyukHarfTr(g.ad)}</td>
+          <td>${String(g.sicil)}</td>
+          <td class="small">${g.kayitTarihi}</td>
+          <td class="text-center">
+            <button onclick="gozlemciSil(event, '${g.id}')" class="btn btn-dark btn-sm py-0 px-2">SİL</button>
+          </td>
+        </tr>`).join('');
+  }
+
+  document.getElementById('personelFormu').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const duzId = document.getElementById('duzenlenenId').value;
+    const rutbe = buyukHarfTr(document.getElementById('pRutbe').value);
+    const ad = buyukHarfTr(document.getElementById('pAd').value.trim());
+    const sicil = document.getElementById('pSicil').value.trim();
+
+    if (!ad) {
+      alert("UYARI: PERSONEL ADI SOYADI BOŞ BIRAKILAMAZ!");
+      document.getElementById('pAd').focus();
+      return;
+    }
+    if (!sicilDogrula(sicil)) {
+      document.getElementById('pSicil').focus();
+      return;
+    }
+
+    if (duzId) {
+      const idx = personelListesi.findIndex(p => String(p.id) === String(duzId));
+      if (idx !== -1) personelListesi[idx] = { ...personelListesi[idx], rutbe, ad, sicil };
+    } else {
+      personelListesi.push({ id: Date.now(), rutbe, ad, sicil, kayitTarihi: cihazSaatiniAl() });
+    }
+    await exceleKaydet();
+    formuTemizle();
+    personelTablosunuCiz();
+  });
+
+  function satirSecVeDoldur(id) {
+    const p = personelListesi.find(i => String(i.id) === String(id));
+    if (!p) return;
+    seciliSatirId = p.id;
+    document.getElementById('duzenlenenId').value = p.id;
+    document.getElementById('pRutbe').value = buyukHarfTr(p.rutbe);
+    document.getElementById('pAd').value = buyukHarfTr(p.ad);
+    document.getElementById('pSicil').value = String(p.sicil);
+    document.getElementById('btnKaydetGuncelle').innerText = "GÜNCELLE";
+    document.getElementById('btnVazgec').style.display = "inline-block";
+    personelTablosunuCiz();
+  }
+
+  function formuTemizle() {
+    seciliSatirId = null;
+    document.getElementById('duzenlenenId').value = "";
+    document.getElementById('pAd').value = "";
+    document.getElementById('pSicil').value = "";
+    document.getElementById('btnKaydetGuncelle').innerHTML = `<i class="bi bi-save"></i> KAYDET`;
+    document.getElementById('btnVazgec').style.display = "none";
+    personelTablosunuCiz();
+  }
+
+  async function personelSil(e, id) {
+    e.stopPropagation();
+    if (!confirm("PERSONEL SİLİNSİN Mİ?")) return;
+    personelListesi = personelListesi.filter(p => String(p.id) !== String(id));
+    await exceleKaydet();
+    personelTablosunuCiz();
+  }
+
+  function personelTablosunuCiz() {
+    const tbody = document.getElementById('personelTabloGovde');
+    const arama = buyukHarfTr(document.getElementById('tabloAramaInput').value);
+    document.getElementById('toplamPersonelSayisi').innerText = personelListesi.length;
+    const filtre = personelListesi.filter(p => buyukHarfTr(p.ad).includes(arama) || String(p.sicil).includes(arama));
+    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="6" class="text-center py-3 text-muted">KAYIT YOK.</td></tr>` :
+      filtre.map((p, i) => `
+        <tr onclick="satirSecVeDoldur('${p.id}')" class="${String(p.id) === String(seciliSatirId) ? 'secili-satir' : ''}">
+          <td>${i + 1}</td>
+          <td><span class="badge bg-secondary">${buyukHarfTr(p.rutbe)}</span></td>
+          <td class="fw-bold"><a href="#" onclick="kisiGelisimModalAc(event, '${String(p.sicil)}', '${buyukHarfTr(p.ad)}', '${buyukHarfTr(p.rutbe)}')" class="text-dark text-decoration-none">${buyukHarfTr(p.ad)}</a></td>
+          <td>${String(p.sicil)}</td>
+          <td class="small">${p.kayitTarihi}</td>
+          <td class="text-center">
+            <button onclick="personelSil(event, '${p.id}')" class="btn btn-dark btn-sm py-0 px-2">SİL</button>
+          </td>
+        </tr>`).join('');
+  }
+
+
+  // =========================================================================
+  // 10. ARŞİV, PUAN SIRALAMASI, KİŞİ GELİŞİM GRAFİĞİ VE İMZALI RAPOR
+  // =========================================================================
+  function arsivAltSekme(tur) {
+    ['kayitlar', 'siralama'].forEach(t => {
+      document.getElementById('arsiv-' + t).style.display = (t === tur) ? 'block' : 'none';
+    });
+    ['tabBtnKayitlar', 'tabBtnSiralama'].forEach(id => document.getElementById(id).classList.remove('aktif'));
+    if (tur === 'kayitlar') { document.getElementById('tabBtnKayitlar').classList.add('aktif'); arsivTablosunuCiz(); }
+    if (tur === 'siralama') { document.getElementById('tabBtnSiralama').classList.add('aktif'); puanSiralamasiCiz(); }
+  }
+
+  function arsivTablosunuCiz() {
+    const toplamSarf = atisArsivi.reduce((t, a) => t + a.atilanMermi, 0);
+    document.getElementById('muhimmatSarfOzet').innerText = `MÜHİMMAT SARFI: TOPLAM ${toplamSarf} ADET`;
+
+    const arama = buyukHarfTr(document.getElementById('arsivArama').value);
+    const tbody = document.getElementById('arsivTabloGovde');
+    const filtre = atisArsivi.filter(a => buyukHarfTr(a.ad).includes(arama) || String(a.sicil).includes(arama) || buyukHarfTr(a.faaliyetAdi).includes(arama));
+
+    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="8" class="text-center py-3 text-muted">ARŞİV KAYDI BULUNAMADI.</td></tr>` :
+      filtre.map(a => `
+        <tr>
+          <td class="small"><b>${buyukHarfTr(a.faaliyetKod)}</b><br>${a.tarih}</td>
+          <td>${a.sira}. SIRA / YOL ${a.yol}</td>
+          <td class="fw-bold"><a href="#" class="text-dark" onclick="kisiGelisimModalAc(event, '${String(a.sicil)}', '${buyukHarfTr(a.ad)}', '${buyukHarfTr(a.rutbe)}')">${buyukHarfTr(a.rutbe)} ${buyukHarfTr(a.ad)}</a></td>
+          <td>${String(a.sicil)}</td>
+          <td>${buyukHarfTr(a.gozlemci)}</td>
+          <td>${a.isabet} / ${a.atilanMermi}</td>
+          <td><span class="badge ${a.puan100 >= 70 ? 'bg-dark' : 'bg-secondary'}">${a.puan100} PUAN</span></td>
+          <td class="small">${buyukHarfTr(a.durum)}</td>
+        </tr>`).join('');
+  }
+
+  function puanSiralamasiCiz() {
+    const harita = {};
+    atisArsivi.filter(a => buyukHarfTr(a.durum) === 'HAZIR').forEach(a => {
+      if (!harita[a.sicil]) harita[a.sicil] = { ad: buyukHarfTr(a.ad), rutbe: buyukHarfTr(a.rutbe), sicil: String(a.sicil), puanlar: [] };
+      harita[a.sicil].puanlar.push(a.puan100);
+    });
+
+    const liste = Object.values(harita).map(k => {
+      const ort = Number((k.puanlar.reduce((s, p) => s + p, 0) / k.puanlar.length).toFixed(1));
+      return {
+        ...k,
+        atisSayisi: k.puanlar.length,
+        ortalama: ort,
+        enIyi: Math.max(...k.puanlar),
+        enDusuk: Math.min(...k.puanlar),
+        sonPuan: k.puanlar[0]
+      };
+    }).sort((a, b) => b.ortalama - a.ortalama || a.ad.localeCompare(b.ad, 'tr'));
+
+    const tbody = document.getElementById('siralamaTabloGovde');
+    let aktifSira = 1;
+    tbody.innerHTML = liste.map((k, idx) => {
+      if (idx > 0 && k.ortalama < liste[idx - 1].ortalama) aktifSira = idx + 1;
+      return `
+        <tr>
+          <td class="fw-bold">${aktifSira}.</td>
+          <td class="fw-bold"><a href="#" class="text-dark" onclick="kisiGelisimModalAc(event, '${k.sicil}', '${k.ad}', '${k.rutbe}')">${k.ad}</a></td>
+          <td>${k.rutbe}</td>
+          <td>${k.sicil}</td>
+          <td>${k.atisSayisi}</td>
+          <td class="fw-bold">${k.ortalama.toString().replace('.', ',')}</td>
+          <td>${k.enIyi}</td>
+          <td>${k.enDusuk}</td>
+          <td>${k.sonPuan}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  function kisiGelisimModalAc(e, sicil, ad, rutbe) {
+    e.preventDefault();
+    e.stopPropagation();
+    const kayitlar = atisArsivi.filter(a => String(a.sicil) === String(sicil) && buyukHarfTr(a.durum) === 'HAZIR').reverse();
+    document.getElementById('kisiGecmisBaslik').innerText = `${buyukHarfTr(ad)} • ${buyukHarfTr(rutbe)} • ${String(sicil)} (${kayitlar.length} KAYIT)`;
+
+    if (kayitlar.length === 0) {
+      document.getElementById('kisiGecmisIcerik').innerHTML = `<p class="text-muted">BU PERSONELE AİT PUANLI ATIŞ KAYDI BULUNMUYOR.</p>`;
+    } else {
+      const puanlar = kayitlar.map(k => k.puan100);
+      const ort = (puanlar.reduce((a, b) => a + b, 0) / puanlar.length).toFixed(1);
+      const enIyi = Math.max(...puanlar);
+      const enDusuk = Math.min(...puanlar);
+
+      const w = 680, h = 150, pad = 25;
+      const noktalar = kayitlar.map((k, i) => {
+        const x = pad + (kayitlar.length === 1 ? (w - 2 * pad) / 2 : (i / (kayitlar.length - 1)) * (w - 2 * pad));
+        const y = h - pad - (k.puan100 / 100) * (h - 2 * pad);
+        return { x, y, puan: k.puan100 };
+      });
+      const poly = noktalar.map(n => `${n.x},${n.y}`).join(' ');
+
+      document.getElementById('kisiGecmisIcerik').innerHTML = `
+        <div class="row g-2 text-center mb-3">
+          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${kayitlar.length}</div><small class="text-muted">ATIŞ SAYISI</small></div></div>
+          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${ort}</div><small class="text-muted">ORTALAMA</small></div></div>
+          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${enIyi}</div><small class="text-muted">EN İYİ</small></div></div>
+          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${enDusuk}</div><small class="text-muted">EN DÜŞÜK</small></div></div>
+        </div>
+        <div class="border rounded p-2 mb-3 text-center">
+          <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:150px;">
+            <polyline fill="none" stroke="#343a40" stroke-width="3" points="${poly}" />
+            ${noktalar.map(n => `<circle cx="${n.x}" cy="${n.y}" r="5" fill="#343a40" /><text x="${n.x}" y="${n.y - 10}" font-size="11" font-weight="bold" text-anchor="middle" fill="#212529">${n.puan}</text>`).join('')}
+          </svg>
+        </div>
+        <table class="dgv-table">
+          <thead><tr><th>FAALİYET</th><th>TARİH</th><th>İSABET</th><th>MÜHİMMAT</th><th>PUAN</th><th>GÖZLEMCİ</th></tr></thead>
+          <tbody>${kayitlar.slice().reverse().map(k => `<tr><td>${buyukHarfTr(k.faaliyetAdi)}</td><td>${k.tarih}</td><td>${k.isabet}</td><td>${k.atilanMermi}</td><td><b>${k.puan100}</b></td><td>${buyukHarfTr(k.gozlemci)}</td></tr>`).join('')}</tbody>
+        </table>`;
+    }
+    new bootstrap.Modal(document.getElementById('kisiGecmisModal')).show();
+  }
+
+
+  // =========================================================================
+  // 11. ATIŞ SORUMLUSU PARMAKLA İMZA, RAPOR VE YEDEKLEME
+  // =========================================================================
+  let ciziyorMu = false;
+  function imzaCanvasHazirla() {
+    const canvas = document.getElementById('imzaCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#212529';
+
+    const pos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    };
+
+    canvas.addEventListener('mousedown', (e) => { ciziyorMu = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); });
+    canvas.addEventListener('mousemove', (e) => { if (!ciziyorMu) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    window.addEventListener('mouseup', () => ciziyorMu = false);
+
+    canvas.addEventListener('touchstart', (e) => { ciziyorMu = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); });
+    canvas.addEventListener('touchmove', (e) => { if (!ciziyorMu) return; e.preventDefault(); const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    window.addEventListener('touchend', () => ciziyorMu = false);
+  }
+
+  function imzaModalAc() {
+    document.getElementById('imzaSorumluBilgi').innerText = buyukHarfTr(aktifFaaliyet.sorumlu);
+    new bootstrap.Modal(document.getElementById('imzaModal')).show();
+  }
+
+  function imzaTemizle() {
+    const canvas = document.getElementById('imzaCanvas');
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function imzaKaydet() {
+    kayitliImzaDataUrl = document.getElementById('imzaCanvas').toDataURL('image/png');
+    yerelHafizayaKaydet();
+    bootstrap.Modal.getInstance(document.getElementById('imzaModal')).hide();
+    raporYazdirAc();
+  }
+
+  function raporYazdirAc() {
+    const atisYapanlar = atisArsivi.filter(a => buyukHarfTr(a.durum) === 'HAZIR');
+    const yapmayanlar = atisArsivi.filter(a => buyukHarfTr(a.durum) !== 'HAZIR');
+    const toplamSarf = atisYapanlar.reduce((t, a) => t + a.atilanMermi, 0);
+    const ortPuan = atisYapanlar.length > 0 ? (atisYapanlar.reduce((t, a) => t + a.puan100, 0) / atisYapanlar.length).toFixed(1) : "0";
+
+    document.getElementById('raporCiktiAlani').innerHTML = `
+      <div class="border-bottom pb-2 mb-3 d-flex justify-content-between">
+        <div>
+          <h4 class="fw-bold mb-0">ATIŞ FAALİYET RAPORU VE MÜHİMMAT SARF TUTANAĞI</h4>
+          <small>${buyukHarfTr(aktifFaaliyet.kod)} • ${buyukHarfTr(aktifFaaliyet.adi)}</small>
+        </div>
+        <div class="text-end small">ÇIKTI ZAMANI: ${cihazSaatiniAl()}</div>
+      </div>
+
+      <table class="table table-bordered table-sm small mb-3">
+        <tr><th>BİRLİK</th><td>${buyukHarfTr(aktifFaaliyet.birlik)}</td><th>ATIŞ YERİ</th><td>${buyukHarfTr(aktifFaaliyet.yer)}</td></tr>
+        <tr><th>ATIŞ SORUMLUSU</th><td>${buyukHarfTr(aktifFaaliyet.sorumlu)}</td><th>ATIŞ TÜRÜ</th><td>${buyukHarfTr(aktifFaaliyet.zaman)} / ${buyukHarfTr(aktifFaaliyet.hedef)} / ${buyukHarfTr(aktifFaaliyet.amac)}</td></tr>
+        <tr><th>KİŞİ BAŞI MÜHİMMAT</th><td>${aktifFaaliyet.mermi} ADET</td><th>ORTALAMA PUAN (100)</th><td><b>${ortPuan}</b></td></tr>
+      </table>
+
+      <h6 class="fw-bold">1. PERSONEL ATIŞ SONUÇLARI (${atisArsivi.length} KAYIT)</h6>
+      <table class="table table-bordered table-sm small mb-4">
+        <thead class="table-light"><tr><th>SIRA</th><th>ADI SOYADI</th><th>RÜTBE</th><th>SİCİL NO</th><th>YOL</th><th>İSABET</th><th>PUAN</th><th>DURUM</th><th>GÖZLEMCİ</th></tr></thead>
+        <tbody>
+          ${atisArsivi.map((a, i) => `<tr><td>${i + 1}</td><td>${buyukHarfTr(a.ad)}</td><td>${buyukHarfTr(a.rutbe)}</td><td>${String(a.sicil)}</td><td>${a.yol}</td><td>${a.isabet}</td><td><b>${a.puan100}</b></td><td>${buyukHarfTr(a.durum)}</td><td>${buyukHarfTr(a.gozlemci)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+
+      <div class="row align-items-end">
+        <div class="col-7">
+          <h6 class="fw-bold">2. MÜHİMMAT SARF ÖZETİ</h6>
+          <table class="table table-bordered table-sm small">
+            <tr><th>ATIŞ YAPAN PERSONEL</th><td>${atisYapanlar.length} KİŞİ</td><td>${toplamSarf} ADET</td></tr>
+            <tr><th>ATIŞ YAPMAYAN / GELMEYEN</th><td>${yapmayanlar.length} KİŞİ</td><td>0 ADET</td></tr>
+            <tr class="table-light"><th>TOPLAM MÜHİMMAT SARFI</th><th>-</th><th>${toplamSarf} ADET</th></tr>
+          </table>
+        </div>
+        <div class="col-5 text-center">
+          <div class="fw-bold small">ATIŞ SORUMLUSU</div>
+          <div class="small mb-1">${buyukHarfTr(aktifFaaliyet.sorumlu)}</div>
+          ${kayitliImzaDataUrl ? `<img src="${kayitliImzaDataUrl}" style="max-height:80px; border-bottom:1px solid #000;">` : `<div style="height:60px; border-bottom:1px solid #000;"></div>`}
+          <div class="small text-muted">İMZA</div>
+        </div>
+      </div>`;
+
+    new bootstrap.Modal(document.getElementById('raporModal')).show();
+  }
+
+  function tamYedekIndir() {
+    const veri = localStorage.getItem('poligon_kayit_yedek') || "{}";
+    const blob = new Blob([veri], { type: "application/json" });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `POLIGON_TAM_YEDEK_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+  }
+
+  function tamYedekYukle(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      localStorage.setItem('poligon_kayit_yedek', e.target.result);
+      yerelHafizadanYukle();
+      alert("TAM YEDEK BAŞARIYLA GERİ YÜKLENDİ!");
+    };
+    reader.readAsText(input.files[0]);
+  }
+</script>
+</body>
+</html>
