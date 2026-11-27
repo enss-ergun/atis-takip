@@ -2,467 +2,633 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Atış Eğitim Kontrol ve Kayıt Sistemi</title>
-
-  <!-- Bootstrap 5 CSS ve İkon Kütüphanesi -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Atış Takip ve Excel Veri İşleme Sistemi</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <!-- SheetJS (Çok Sayfalı Excel Okuma / Yazma) -->
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    /* =====================================================================
-       1. GRİ / ANTRASİT TEMA RENK DEĞİŞKENLERİ
-       ===================================================================== */
     :root {
-      --bg-ana: #eceef1;
+      --bg-ana: #f1f3f5;
       --bg-kart: #ffffff;
-      --bg-ust: #3f464e;
-      --bg-sidebar: #2b3036;
-      --bg-brand: #1c2024;
-      --vurgu-ana: #495057;
-      --vurgu-koyu: #343a40;
+      --bg-sidebar: #2b3035;
+      --bg-gri-koyu: #343a40;
+      --bg-gri-orta: #6c757d;
+      --bg-gri-acik: #e9ecef;
+      --border-renk: #dee2e6;
       --text-ana: #212529;
       --text-ikincil: #6c757d;
-      --border-renk: #d0d5dd;
-      --skor-bg: #f8f9fa;
-      --skor-aktif-bg: #e9ecef;
-      --siradaki-bg: #f1f3f5;
-      --siradaki-border: #ced4da;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       background-color: var(--bg-ana);
       color: var(--text-ana);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      margin: 0;
+      padding: 0;
     }
 
-    /* Tüm metin kutuları ve seçim listelerinde kesin büyük harf zorunluluğu */
-    input[type="text"], textarea, select {
+    input[type="text"], textarea {
       text-transform: uppercase;
     }
 
-    /* SOL MENÜ (SIDEBAR - KOYU GRİ / ANTRASİT) */
-    .sidebar {
-      width: 112px;
-      min-height: 100vh;
-      background-color: var(--bg-sidebar);
-      color: #f8f9fa;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .brand-box {
-      background-color: var(--bg-brand);
-      padding: 14px 8px;
-      text-align: center;
-      border-bottom: 1px solid #343a40;
-    }
-    .nav-item-btn {
-      color: #ced4da;
-      text-align: center;
-      padding: 13px 5px;
-      font-size: 12.5px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      cursor: pointer;
-      transition: background-color 0.15s;
-    }
-    .nav-item-btn:hover {
-      background-color: #383e45;
-      color: #ffffff;
-    }
-    .nav-item-btn i { display: block; font-size: 20px; margin-bottom: 3px; }
-    .nav-item-btn.active {
-      background-color: #495057;
-      color: #ffffff;
-      font-weight: 600;
-      border-left: 4px solid #adb5bd;
-    }
-
-    /* KARTLAR VE KUTULAR */
-    .custom-card, .yol-kart {
-      background-color: var(--bg-kart);
-      border: 1px solid var(--border-renk);
-      border-radius: 10px;
-      padding: 14px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-    }
-
-    /* ANA EKRAN BÜYÜK BUTON KARTLARI */
-    .ana-menu-kart {
-      background-color: var(--bg-kart);
-      border: 1px solid var(--border-renk);
-      border-radius: 12px;
-      padding: 22px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      transition: transform 0.1s, background-color 0.15s;
-    }
-    .ana-menu-kart:hover { background-color: #f8f9fa; }
-    .ana-menu-kart:active { transform: scale(0.98); }
-    .ana-menu-kart.birincil {
-      background-color: var(--vurgu-koyu);
-      color: #ffffff;
-      border: none;
-    }
-    .ana-menu-kart.birincil:hover { background-color: #23272b; }
-    .ana-ikon-kutu {
-      width: 48px;
-      height: 48px;
-      border-radius: 10px;
-      background: #e9ecef;
-      color: var(--vurgu-koyu);
+    /* AÇILIŞ ZORUNLU EXCEL BAĞLAMA EKRANI */
+    #zorunluExcelPerdesi {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(33, 37, 41, 0.95);
+      z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      padding: 20px;
     }
-    .ana-menu-kart.birincil .ana-ikon-kutu {
-      background: rgba(255,255,255,0.15);
-      color: #ffffff;
-    }
-
-    /* GRİ ANA BUTONLAR */
-    .btn-gri {
-      background-color: var(--vurgu-koyu);
-      color: #ffffff;
-      border: none;
-    }
-    .btn-gri:hover {
-      background-color: #212529;
-      color: #ffffff;
-    }
-
-    /* DATAGRIDVIEW TABLO TASARIMI */
-    .dgv-container {
-      border: 1px solid var(--border-renk);
-      border-radius: 6px;
-      background: var(--bg-kart);
-      overflow-y: auto;
-      max-height: 360px;
-    }
-    .dgv-table {
+    .excel-karsilama-kart {
+      background: #ffffff;
+      border-radius: 14px;
+      max-width: 460px;
       width: 100%;
-      border-collapse: collapse;
-      font-size: 13.5px;
-      color: var(--text-ana);
-    }
-    .dgv-table thead th {
-      background-color: #e9ecef;
-      font-weight: 700;
-      border-bottom: 1px solid var(--border-renk);
-      padding: 8px 10px;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-    .dgv-table tbody td {
-      border-bottom: 1px solid var(--border-renk);
-      padding: 7px 10px;
-      cursor: pointer;
-    }
-    .dgv-table tbody tr:hover { background-color: #f1f3f5; }
-    .dgv-table tbody tr.secili-satir { background-color: #495057 !important; color: #fff !important; }
-
-    /* ATIŞ YOLLARI VE SKOR KUTULARI */
-    .yol-badge {
-      background-color: var(--vurgu-koyu);
-      color: white;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-    .skor-kutusu {
-      background-color: var(--skor-bg);
-      border: 1px solid var(--border-renk);
-      border-radius: 8px;
+      padding: 32px 24px;
       text-align: center;
-      padding: 8px 4px;
-      margin-top: 8px;
-      cursor: pointer;
-    }
-    .skor-kutusu:active { transform: scale(0.96); }
-    .skor-kutusu.kaydedildi {
-      background-color: var(--skor-aktif-bg);
-      border: 2px solid var(--vurgu-koyu);
-    }
-    .skor-rakam { font-size: 32px; font-weight: 700; line-height: 1.1; }
-    .skor-toplam { font-size: 15px; color: var(--text-ikincil); font-weight: 600; }
-    .siradaki-grup-box {
-      background-color: var(--siradaki-bg);
-      border: 1px solid var(--siradaki-border);
-      border-radius: 8px;
-      font-size: 12.5px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.4);
     }
 
-    /* SEÇENEK BUTONLARI */
-    .secenek-btn {
-      border: 1px solid var(--border-renk);
-      background: var(--bg-kart);
-      color: var(--text-ana);
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
+    .app-wrapper {
+      display: flex;
+      min-height: 100vh;
     }
-    .secenek-btn.aktif {
-      background-color: var(--vurgu-koyu);
-      color: #ffffff;
-      border-color: var(--vurgu-koyu);
+
+    .sidebar {
+      width: 245px;
+      background-color: var(--bg-sidebar);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      background-color: #212529;
+      border-bottom: 1px solid #3f464d;
+    }
+
+    .nav-item-btn {
+      background: none;
+      border: none;
+      color: #ced4da;
+      width: 100%;
+      text-align: left;
+      padding: 12px 18px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid transparent;
+      transition: 0.15s;
+    }
+
+    .nav-item-btn i {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .nav-item-btn:hover {
+      background-color: #383e45;
+      color: #fff;
+    }
+
+    .nav-item-btn.active {
+      background-color: #495057;
+      color: #fff;
+      border-left-color: #adb5bd;
+      font-weight: 600;
+    }
+
+    /* ADMIN ALTINDAKİ YEŞİL EXCEL BAĞLANTI GÖSTERGESİ */
+    .excel-bagli-gosterge {
+      margin: 10px 14px;
+      padding: 10px 12px;
+      background-color: rgba(25, 135, 84, 0.18);
+      border: 1px solid #198754;
+      border-radius: 8px;
+      color: #d1e7dd;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      word-break: break-word;
+    }
+    .excel-bagli-nokta {
+      width: 10px;
+      height: 10px;
+      background-color: #20c997;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px #20c997;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 22px;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    /* MOBİL / TELEFON FERAH VE SABİT ANA EKRAN DÜZENİ */
+    @media (max-width: 991.98px) {
+      .app-wrapper {
+        flex-direction: column;
+        min-height: 100dvh;
+      }
+      .sidebar {
+        width: 100%;
+        flex-direction: column;
+      }
+      .sidebar-header {
+        padding: 12px 16px;
+      }
+      .sidebar-menu {
+        display: flex;
+        overflow-x: auto;
+        white-space: nowrap;
+        background-color: var(--bg-sidebar);
+        padding: 4px 8px;
+        gap: 6px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .nav-item-btn {
+        width: auto;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+        padding: 10px 14px;
+        font-size: 13px;
+        gap: 8px;
+        border-radius: 6px;
+      }
+      .nav-item-btn.active {
+        border-left-color: transparent;
+        border-bottom-color: #fff;
+        background-color: #3f464d;
+      }
+      .excel-bagli-gosterge {
+        margin: 6px 12px 10px 12px;
+        padding: 7px 12px;
+        font-size: 11.5px;
+      }
+      .sidebar-footer {
+        display: none;
+      }
+      .main-content {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+      #sekme-anaekran.aktif {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex-grow: 1;
+        gap: 10px;
+      }
+      #sekme-anaekran .ana-kart-grid {
+        row-gap: 10px !important;
+      }
+      #sekme-anaekran .custom-card {
+        padding: 14px 16px;
+      }
+      #sekme-anaekran .custom-card p {
+        display: none;
+      }
     }
 
     .ekran-bolumu { display: none; }
     .ekran-bolumu.aktif { display: block; }
 
+    .custom-card {
+      background: var(--bg-kart);
+      border: 1px solid var(--border-renk);
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .dgv-container {
+      border: 1px solid #adb5bd;
+      background: #fff;
+      max-height: 440px;
+      overflow: auto;
+      border-radius: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .dgv-table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .dgv-table thead th {
+      position: sticky;
+      top: 0;
+      background-color: var(--bg-gri-acik);
+      color: var(--text-ana);
+      border: 1px solid #ced4da;
+      padding: 10px 12px;
+      font-weight: 700;
+      z-index: 2;
+      white-space: nowrap;
+    }
+    .dgv-table tbody td {
+      border: 1px solid #dee2e6;
+      padding: 9px 12px;
+      vertical-align: middle;
+    }
+    .dgv-table tbody tr:hover { background-color: #f8f9fa; cursor: pointer; }
+    .dgv-table tbody tr.secili-satir { background-color: #e2e6ea !important; font-weight: 600; }
+
+    .secenek-btn {
+      border: 1px solid #adb5bd;
+      background: #fff;
+      color: var(--text-ana);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .secenek-btn.aktif {
+      background: var(--bg-gri-koyu);
+      color: #fff;
+      border-color: var(--bg-gri-koyu);
+    }
+
+    .btn-gri {
+      background-color: var(--bg-gri-koyu);
+      color: #fff;
+      border: 1px solid var(--bg-gri-koyu);
+    }
+    .btn-gri:hover {
+      background-color: #212529;
+      color: #fff;
+    }
+
+    .yol-kart {
+      background: #fff;
+      border: 1px solid #ced4da;
+      border-radius: 10px;
+      padding: 14px;
+      transition: 0.15s;
+    }
+    .yol-badge {
+      background: var(--bg-gri-koyu);
+      color: #fff;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+
+    .hedef-sayac-satir {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+    }
+    .hedef-sayac-satir.aktif-vurus {
+      background: #e9ecef;
+      border-color: #495057;
+    }
+    .btn-sayac {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      font-weight: 800;
+      font-size: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .puan-numpad-kutu {
+      background: #f8f9fa;
+      border: 2px solid #adb5bd;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .puan-numpad-kutu.girildi {
+      background: #e9ecef;
+      border-color: #212529;
+    }
+    .puan-numpad-input {
+      font-size: 26px !important;
+      font-weight: 800 !important;
+      text-align: center;
+      letter-spacing: 1px;
+      height: 54px;
+      border: 1px solid #495057 !important;
+      background-color: #fff !important;
+      color: #212529 !important;
+    }
+
+    .siradaki-grup-box {
+      background: #fff;
+      border: 1px dashed #6c757d;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+
+    .arama-input-esnek {
+      width: 100%;
+      max-width: 280px;
+    }
+
+    /* PDF / YAZDIRMA ÇOKLU SAYFA DÜZELTMESİ */
     @media print {
-      .sidebar, .no-print { display: none !important; }
-      body { background: #fff !important; color: #000 !important; }
-      .modal { position: static !important; display: block !important; }
-      .modal-dialog { max-width: 100% !important; margin: 0 !important; }
+      body, html {
+        background: #fff !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      .app-wrapper, .sidebar, .no-print, .modal-backdrop, #zorunluExcelPerdesi {
+        display: none !important;
+      }
+      #raporModal {
+        position: static !important;
+        display: block !important;
+        overflow: visible !important;
+        opacity: 1 !important;
+        padding: 0 !important;
+      }
+      #raporModal .modal-dialog {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        transform: none !important;
+      }
+      #raporModal .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #raporModal .modal-body {
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; page-break-after: auto; }
+      thead { display: table-header-group; }
     }
   </style>
 </head>
 <body>
 
-<div class="d-flex">
-  <!-- =====================================================================
-       SOL MENÜ (GRİ / ANTRASİT)
-       ===================================================================== -->
-  <div class="sidebar flex-shrink-0 no-print" id="solMenuBar">
-    <div>
-      <div class="brand-box">
-        <div class="fw-bold fs-6">ATIŞ SİSTEMİ</div>
-        <div style="font-size: 10px; color: #adb5bd; line-height: 1.2;">Eğitim Kontrol<br>ve Kayıt</div>
+<!-- AÇILIŞTA ZORUNLU EXCEL BAĞLAMA EKRANI -->
+<div id="zorunluExcelPerdesi">
+  <div class="excel-karsilama-kart">
+    <div class="mb-3">
+      <span class="badge bg-dark px-3 py-2 fs-6"><i class="bi bi-bullseye me-1"></i> ATIŞ TAKİP SİSTEMİ</span>
+    </div>
+    <h4 class="fw-bold mb-2">Excel Dosyası Bağlayın</h4>
+    <p class="text-muted small mb-4">
+      Sistemi kullanabilmek için içinde <b>Kurs No</b> ve <b>Adı Soyadı</b> bulunan Excel dosyanızı bağlamanız gerekmektedir.<br><br>
+      <span class="text-dark fw-semibold"><i class="bi bi-shield-check me-1"></i> Yüklediğiniz orijinal Excel dosyasına dokunulmaz; işlemler sonunda dereceli yeni bir Excel oluşturulur.</span>
+    </p>
+    <button onclick="excelDosyasiSecVeYukle()" class="btn btn-gri btn-lg w-100 fw-bold py-3">
+      <i class="bi bi-file-earmark-excel me-2"></i> EXCEL DOSYASI BAĞLA
+    </button>
+    <input type="file" id="gizliExcelInput" accept=".xlsx,.xls" hidden onchange="excelDosyaSecildi(this)">
+  </div>
+</div>
+
+<div class="app-wrapper">
+  <!-- SOL / ÜST MENÜ -->
+  <div class="sidebar no-print">
+    <div class="sidebar-header d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0 fw-bold fs-6"><i class="bi bi-bullseye me-1"></i> ATIŞ TAKİP</h5>
+        <small class="text-secondary" style="font-size: 11px;">Excel Veri İşleme Sistemi</small>
       </div>
-      <div class="nav-item-btn active" data-sekme="anaekran" onclick="sekmeAc('anaekran', this)"><i class="bi bi-house-door"></i>Ana Ekran</div>
-      <div class="nav-item-btn" data-sekme="atis" onclick="sekmeAc('atis', this)"><i class="bi bi-bullseye"></i>Atış</div>
-      <div class="nav-item-btn" data-sekme="personel" onclick="sekmeAc('personel', this)"><i class="bi bi-people"></i>Personel</div>
-      <div class="nav-item-btn" data-sekme="gozlemciler" onclick="sekmeAc('gozlemciler', this)"><i class="bi bi-person-badge"></i>Gözlemciler</div>
-      <div class="nav-item-btn" data-sekme="arsiv" onclick="sekmeAc('arsiv', this)"><i class="bi bi-archive"></i>Arşiv</div>
-      <div class="nav-item-btn" data-sekme="admin" onclick="sekmeAc('admin', this)"><i class="bi bi-shield-check"></i>Admin</div>
     </div>
 
-    <div>
-      <div class="nav-item-btn" onclick="oncekiSayfayaDon()"><i class="bi bi-arrow-left-circle"></i>Geri Dön</div>
+    <div class="sidebar-menu mt-lg-2">
+      <button class="nav-item-btn active" data-sekme="anaekran" onclick="sekmeAc('anaekran', this)">
+        <i class="bi bi-house-door"></i> Ana Ekran
+      </button>
+      <button class="nav-item-btn" data-sekme="atis" onclick="sekmeAc('atis', this)">
+        <i class="bi bi-crosshair"></i> Atış Ekranı
+      </button>
+      <button class="nav-item-btn" data-sekme="personel" onclick="sekmeAc('personel', this)">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Excel Tablosu
+      </button>
+      <button class="nav-item-btn" data-sekme="nezaretciler" onclick="sekmeAc('nezaretciler', this)">
+        <i class="bi bi-person-badge"></i> Nezaretçiler
+      </button>
+      <button class="nav-item-btn" data-sekme="arsiv" onclick="sekmeAc('arsiv', this)">
+        <i class="bi bi-trophy"></i> Sonuçlar & Rapor
+      </button>
+      <button class="nav-item-btn" data-sekme="admin" onclick="sekmeAc('admin', this)">
+        <i class="bi bi-shield-lock"></i> Admin
+      </button>
+    </div>
+
+    <!-- ADMİN SEKMESİNİN ALTINDA YEŞİL EXCEL BAĞLANTI GÖSTERGESİ -->
+    <div id="excelBagliKutusu" class="excel-bagli-gosterge" style="display:none;">
+      <span class="excel-bagli-nokta"></span>
+      <div class="lh-sm">
+        <div class="fw-bold text-success-emphasis" style="color:#75b798 !important; font-size:11px;">EXCEL BAĞLI</div>
+        <div id="solMenuDosyaAdi" class="fw-semibold text-white" style="font-size:11.5px;">-</div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer mt-auto p-3 border-top border-secondary" style="font-size: 11px; color: #adb5bd;">
+      <i class="bi bi-shield-check me-1"></i> Orijinal Excel korunur; sonuçlar yeni işlenmiş Excel olarak oluşturulur.
     </div>
   </div>
 
   <!-- ANA İÇERİK ALANI -->
-  <div class="flex-grow-1 p-3">
+  <div class="main-content">
 
-    <!-- EXCEL VERİTABANI BAĞLANTI ÇUBUĞU -->
-    <div class="alert alert-secondary d-flex flex-wrap justify-content-between align-items-center py-2 px-3 mb-3 no-print" id="excelDurumBar">
-      <div>
-        <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i>
-        <strong id="bagliDosyaAdi">Excel Veritabanı Bağlı Değil (Veriler Geçici Hafızada)</strong>
-        <span class="small d-block d-md-inline ms-md-2" id="bagliDosyaAciklama">Kalıcı kayıt için tabletteki Excel dosyasını bağlayın.</span>
-      </div>
-      <div class="d-flex gap-2 mt-2 mt-md-0">
-        <button onclick="yeniExcelOlusturVeBagla()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-file-earmark-plus"></i> Yeni Excel Oluştur</button>
-        <button onclick="mevcutExcelBagla()" class="btn btn-dark btn-sm fw-bold"><i class="bi bi-folder2-open"></i> Mevcut Excel Seç</button>
-      </div>
-    </div>
-
-    <!-- =====================================================================
-         1. SEKME: ANA EKRAN (DASHBOARD)
-         ===================================================================== -->
+    <!-- 1. SEKME: ANA EKRAN -->
     <div id="sekme-anaekran" class="ekran-bolumu aktif">
-      <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded text-white" style="background-color: var(--bg-ust);">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-lg-3">
         <div>
-          <h4 class="fw-bold mb-0">Atış Eğitim Kontrol ve Kayıt Sistemi</h4>
-          <small id="bugunTarihMetni"></small>
+          <h4 class="fw-bold mb-0 fs-5">Atış Yönetim Sistemi</h4>
+          <small class="text-muted" id="bugunTarihMetni"></small>
         </div>
-        <span class="badge bg-light text-dark">İnternetsiz Yerel Sistem</span>
-      </div>
-
-      <!-- Devam Eden Atış Kartı -->
-      <div class="custom-card mb-3 d-flex flex-wrap justify-content-between align-items-center" id="devamEdenAtisKarti" style="display:none !important;">
-        <div>
-          <span class="badge bg-dark mb-1"><i class="bi bi-play-circle"></i> DEVAM EDEN ATIŞ</span>
-          <h5 class="fw-bold mb-0" id="devamFaaliyetAdi">-</h5>
-          <small class="text-muted" id="devamFaaliyetDetay">-</small>
-        </div>
-        <button onclick="sekmeAc('atis', document.querySelector('[data-sekme=atis]'))" class="btn btn-gri fw-bold px-4 py-2">
-          <i class="bi bi-arrow-right"></i> DEVAM ET
+        <button onclick="yeniFaaliyetSihirbaziAc()" class="btn btn-gri fw-bold px-4 py-2">
+          <i class="bi bi-plus-circle me-1"></i> YENİ ATIŞ BAŞLAT
         </button>
       </div>
 
-      <!-- Ana Menü Kartları -->
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="ana-menu-kart birincil" onclick="yeniFaaliyetSihirbaziAc()">
-            <div class="ana-ikon-kutu"><i class="bi bi-plus-lg"></i></div>
+      <!-- Devam Eden Atış Varsa -->
+      <div id="devamEdenAtisKarti" class="custom-card mb-lg-3 border-dark d-flex flex-wrap justify-content-between align-items-center gap-2" style="display:none !important; background-color:#e9ecef;">
+        <div>
+          <span class="badge bg-dark mb-1">DEVAM EDEN ATIŞ VAR</span>
+          <h6 class="fw-bold mb-0" id="devamFaaliyetAdi">-</h6>
+          <small class="text-muted" id="devamFaaliyetDetay">-</small>
+        </div>
+        <button onclick="sekmeAc('atis', document.querySelector('[data-sekme=atis]')); atisAdimGec(4);" class="btn btn-gri btn-sm fw-bold px-3 py-2">
+          <i class="bi bi-play-fill me-1"></i> ATIŞA DEVAM ET
+        </button>
+      </div>
+
+      <div class="row g-3 ana-kart-grid flex-grow-1">
+        <div class="col-12 col-md-4">
+          <div class="custom-card h-100 d-flex flex-column justify-content-between gap-2">
             <div>
-              <h5 class="fw-bold mb-1">Yeni Atış</h5>
-              <div class="small opacity-75">Yeni atış faaliyeti başlat (Faaliyet, Gözlemciler, Personel)</div>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-dark" id="anaEkranKayitRozeti">0 KAYIT YÜKLÜ</span>
+                <i class="bi bi-file-earmark-spreadsheet fs-5 text-secondary"></i>
+              </div>
+              <h6 class="fw-bold mb-1">Excel Tablosu & Atıcılar</h6>
+              <p class="text-muted small mb-0">Bağlı Excel listesindeki personeli görüntüleyin, yeni kursiyer/asker ekleyin ve dereceli sonuç tablosunu inceleyin.</p>
             </div>
+            <button onclick="sekmeAc('personel', document.querySelector('[data-sekme=personel]'))" class="btn btn-gri btn-sm w-100 fw-bold py-2">EXCEL TABLOSUNU AÇ</button>
           </div>
         </div>
-        <div class="col-md-6" id="kartArsiv">
-          <div class="ana-menu-kart" onclick="sekmeAc('arsiv', document.querySelector('[data-sekme=arsiv]'))">
-            <div class="ana-ikon-kutu"><i class="bi bi-archive"></i></div>
+        <div class="col-12 col-md-4">
+          <div class="custom-card h-100 d-flex flex-column justify-content-between gap-2">
             <div>
-              <h5 class="fw-bold mb-1">Arşiv</h5>
-              <div class="small text-muted">Eski kayıtlar, gelişim grafikleri, sıralama ve imzalı raporlar</div>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-secondary" id="anaEkranNezaretciRozeti">0 NEZARETÇİ KAYITLI</span>
+                <i class="bi bi-person-badge fs-5 text-secondary"></i>
+              </div>
+              <h6 class="fw-bold mb-1">Nezaretçiler</h6>
+              <p class="text-muted small mb-0">Kayıtlı nezaretçiler sistem hafızasında kalıcı tutulur; her açılışta hazır olarak gelir.</p>
             </div>
+            <button onclick="sekmeAc('nezaretciler', document.querySelector('[data-sekme=nezaretciler]'))" class="btn btn-outline-dark btn-sm w-100 fw-bold py-2">NEZARETÇİLERİ YÖNET</button>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="ana-menu-kart" onclick="sekmeAc('personel', document.querySelector('[data-sekme=personel]'))">
-            <div class="ana-ikon-kutu"><i class="bi bi-people"></i></div>
+        <div class="col-12 col-md-4">
+          <div class="custom-card h-100 d-flex flex-column justify-content-between gap-2">
             <div>
-              <h5 class="fw-bold mb-1">Personel ve Gözlemci Kayıtları</h5>
-              <div class="small text-muted">Atışa katılacak personel ve yol gözlemcilerini düzenle</div>
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-secondary">İŞLENMİŞ SONUÇLAR</span>
+                <i class="bi bi-trophy fs-5 text-secondary"></i>
+              </div>
+              <h6 class="fw-bold mb-1">Sonuçlar & Rapor</h6>
+              <p class="text-muted small mb-0">Sadece Excel'e işlenen güncel atış sonuçlarını ve katılım durumunu görüntüleyin.</p>
             </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="ana-menu-kart" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]'))">
-            <div class="ana-ikon-kutu"><i class="bi bi-building-gear"></i></div>
-            <div>
-              <h5 class="fw-bold mb-1">Admin (Birlik & Atış Yeri)</h5>
-              <div class="small text-muted">Birlik, atış poligonu tanımları ve sistem yedekleme işlemleri</div>
-            </div>
+            <button onclick="sekmeAc('arsiv', document.querySelector('[data-sekme=arsiv]'))" class="btn btn-outline-dark btn-sm w-100 fw-bold py-2">SONUÇLARI GÖRÜNTÜLE</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- =====================================================================
-         2. SEKME: ATIŞ YÖNETİMİ (3 ADIMLI HAZIRLIK + CANLI ATIŞ)
-         ===================================================================== -->
+    <!-- 2. SEKME: ATIŞ PLANLAMA VE CANLI ATIŞ EKRANI -->
     <div id="sekme-atis" class="ekran-bolumu">
+      <div class="mb-3">
+        <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold px-3"><i class="bi bi-arrow-left me-1"></i> GERİ DÖN</button>
+      </div>
 
-      <!-- ADIM 1: FAALİYET BİLGİLERİ VE ATIŞ TÜRÜ -->
+      <!-- ADIM 1: FAALİYET BİLGİLERİ -->
       <div id="atis-adim-1" class="custom-card">
-        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-2 mb-3 gap-2">
-          <div class="d-flex align-items-center gap-2">
-            <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
-            <div>
-              <span class="badge bg-dark me-1">1 FAALİYET</span>
-              <span class="badge bg-secondary me-1">2 GÖZLEMCİLER</span>
-              <span class="badge bg-secondary">3 PERSONEL</span>
-              <h5 class="fw-bold mt-1 mb-0">Faaliyet Bilgileri ve Kişi Başı Mühimmat</h5>
-            </div>
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+          <div>
+            <span class="badge bg-dark me-1">1 FAALİYET</span>
+            <span class="badge bg-secondary me-1">2 NEZARETÇİLER</span>
+            <span class="badge bg-secondary">3 ATICILAR</span>
+            <h5 class="fw-bold mt-2 mb-0 fs-6">Yeni Atış Faaliyeti Bilgileri</h5>
           </div>
-          <span class="text-muted small fw-bold" id="yeniFaaliyetKodu">ATS-2026-0001</span>
+          <span class="badge bg-secondary" id="yeniFaaliyetKodu">ATS-2026-0001</span>
         </div>
 
         <div class="row g-3">
-          <div class="col-md-6">
-            <div class="mb-2">
-              <label class="form-label small fw-bold">FAALİYET ADI *</label>
-              <input type="text" id="fAdi" class="form-control fw-bold" value="TERMAL HEDEF ATIŞI" required>
-            </div>
-            <div class="mb-2">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="form-label small fw-bold mb-0">BİRLİK SEÇİN *</label>
-                <a href="#" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]')); return false;" class="small text-dark fw-bold text-decoration-none">+ BİRLİK EKLE (ADMİN)</a>
-              </div>
-              <select id="fBirlikSelect" class="form-select fw-bold" required>
-                <option value="">-- ADMİN SAYFASINDAN BİRLİK SEÇİN --</option>
-              </select>
-            </div>
-            <div class="mb-2">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="form-label small fw-bold mb-0">ATIŞ YERİ / POLİGONU SEÇİN *</label>
-                <a href="#" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]')); return false;" class="small text-dark fw-bold text-decoration-none">+ ATIŞ YERİ EKLE (ADMİN)</a>
-              </div>
-              <select id="fYerSelect" class="form-select fw-bold" required>
-                <option value="">-- ADMİN SAYFASINDAN ATIŞ YERİ SEÇİN --</option>
-              </select>
-            </div>
-            <div class="mb-2">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <label class="form-label small fw-bold mb-0">ATIŞ SORUMLUSU / GÖZLEMCİ SEÇİN *</label>
-                <a href="#" onclick="sekmeAc('gozlemciler', document.querySelector('[data-sekme=gozlemciler]')); return false;" class="small text-dark fw-bold text-decoration-none">+ YENİ GÖZLEMCİ EKLE</a>
-              </div>
-              <select id="fSorumluSelect" class="form-select fw-bold" required>
-                <option value="">-- ÖNCE GÖZLEMCİLER SEKMESİNDEN EKLEYİN --</option>
-              </select>
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold">FAALİYET ADI *</label>
+            <input type="text" id="fAdi" class="form-control form-control-sm fw-bold" value="TEMEL ATIŞ EĞİTİMİ">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold">TABUR / BİRLİK * <a href="#" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]')); return false;" class="text-dark ms-1">[+ EKLE]</a></label>
+            <select id="fBirlikSelect" class="form-select form-select-sm fw-bold"></select>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold">ATIŞ YERİ * <a href="#" onclick="sekmeAc('admin', document.querySelector('[data-sekme=admin]')); return false;" class="text-dark ms-1">[+ EKLE]</a></label>
+            <select id="fYerSelect" class="form-select form-select-sm fw-bold"></select>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label small fw-bold d-block">SİLAH TÜRÜ</label>
+            <div class="d-flex flex-wrap gap-2" id="grpSilah">
+              <button type="button" class="secenek-btn aktif" onclick="secenekSec('grpSilah', this)">TÜFEK</button>
+              <button type="button" class="secenek-btn" onclick="secenekSec('grpSilah', this)">TABANCA</button>
             </div>
           </div>
 
-          <div class="col-md-6">
-            <div class="mb-2">
-              <label class="form-label small fw-bold d-block">ZAMAN</label>
-              <div class="d-flex gap-2" id="grpZaman">
-                <button type="button" class="secenek-btn aktif" onclick="secenekSec('grpZaman', this)">GÜNDÜZ</button>
-                <button type="button" class="secenek-btn" onclick="secenekSec('grpZaman', this)">GECE</button>
-              </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label small fw-bold d-block">HEDEF TÜRÜ</label>
+            <div class="d-flex flex-wrap gap-2" id="grpHedef">
+              <button type="button" class="secenek-btn aktif" onclick="hedefTuruDegisti('SABİT HEDEF', this)">SABİT HEDEF</button>
+              <button type="button" class="secenek-btn" onclick="hedefTuruDegisti('PUANLI HEDEF', this)">PUANLI HEDEF</button>
             </div>
-            <div class="mb-2">
-              <label class="form-label small fw-bold d-block">HEDEF TÜRÜ</label>
-              <div class="d-flex gap-2" id="grpHedef">
-                <button type="button" class="secenek-btn aktif" onclick="secenekSec('grpHedef', this)">TERMAL</button>
-                <button type="button" class="secenek-btn" onclick="secenekSec('grpHedef', this)">ÇELİK</button>
-                <button type="button" class="secenek-btn" onclick="secenekSec('grpHedef', this)">KÂĞIT</button>
-              </div>
-            </div>
-            <div class="mb-2">
-              <label class="form-label small fw-bold d-block">ATIŞ AMACI</label>
-              <div class="d-flex gap-2" id="grpAmac">
-                <button type="button" class="secenek-btn aktif" onclick="secenekSec('grpAmac', this)">EĞİTİM</button>
-                <button type="button" class="secenek-btn" onclick="secenekSec('grpAmac', this)">SIFIRLAMA</button>
-              </div>
-            </div>
-            <div class="row g-2 mt-2">
-              <div class="col-6">
-                <label class="form-label small fw-bold">KİŞİ BAŞI MÜHİMMAT *</label>
-                <input type="number" id="fMermi" class="form-control fw-bold" value="3" min="1" max="50">
-              </div>
-              <div class="col-6">
-                <label class="form-label small fw-bold">AÇIK YOL SAYISI (1-10)</label>
-                <input type="number" id="fYolSayisi" class="form-control fw-bold" value="10" min="1" max="10">
-              </div>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label class="form-label small fw-bold">KİŞİ BAŞI FİŞEK</label>
+            <input type="number" id="fMermi" class="form-control form-control-sm fw-bold" value="5" min="1">
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small fw-bold">ATIŞ YOLU SAYISI</label>
+            <input type="number" id="fYolSayisi" class="form-control form-control-sm fw-bold" value="10" min="1" max="50">
+          </div>
+          <div class="col-12 col-md-3" id="yoldakiHedefSayisiKutusu">
+            <label class="form-label small fw-bold">1 YOLDAKİ HEDEF SAYISI</label>
+            <input type="number" id="fHedefSayisi" class="form-control form-control-sm fw-bold" value="2" min="1" max="10">
+          </div>
+          <div class="col-12 col-md-3 d-flex align-items-end">
+            <div class="small text-muted border rounded p-2 w-100 bg-light" id="hedefTuruBilgiKutusu">
+              <strong>SABİT HEDEF:</strong> Puan hesaplanmaz; sadece toplam isabet sayısı tutulur.
             </div>
           </div>
         </div>
 
-        <div class="d-flex justify-content-between mt-3 pt-2 border-top">
-          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
-          <button onclick="atisAdimGec(2)" class="btn btn-gri fw-bold px-4">İLERİ <i class="bi bi-arrow-right"></i></button>
+        <div class="text-end mt-3 pt-3 border-top">
+          <button onclick="atisAdimGec(2)" class="btn btn-gri fw-bold px-4 py-2">İLERİ: NEZARETÇİ DAĞITIMI <i class="bi bi-arrow-right ms-1"></i></button>
         </div>
       </div>
 
-      <!-- ADIM 2: GÖZLEMCİLERİ YOLLARA DAĞITMA -->
+      <!-- ADIM 2: ATIŞ YOLLARINI DÜZENLE VE NEZARETÇİ ATA -->
       <div id="atis-adim-2" class="custom-card" style="display:none;">
-        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-2 mb-3 gap-2">
           <div>
             <span class="badge bg-secondary me-1">✓ FAALİYET</span>
-            <span class="badge bg-dark me-1">2 GÖZLEMCİLER</span>
-            <span class="badge bg-secondary">3 PERSONEL</span>
-            <h5 class="fw-bold mt-1 mb-0">Yollara Gözlemci Ataması</h5>
+            <span class="badge bg-dark me-1">2 NEZARETÇİLER</span>
+            <span class="badge bg-secondary">3 ATICILAR</span>
+            <h5 class="fw-bold mt-2 mb-0 fs-6">Atış Yollarını Düzenle ve Nezaretçi Ata (<span id="adim2YolSayisiBaslik">10</span> Yol)</h5>
           </div>
-          <button onclick="sekmeAc('gozlemciler', document.querySelector('[data-sekme=gozlemciler]'))" class="btn btn-outline-dark btn-sm fw-bold">+ YENİ GÖZLEMCİ EKLE</button>
+          <div class="d-flex flex-wrap gap-2">
+            <button onclick="sekmeAc('nezaretciler', document.querySelector('[data-sekme=nezaretciler]'))" class="btn btn-outline-dark btn-sm fw-bold">+ YENİ NEZARETÇİ EKLE</button>
+          </div>
         </div>
 
-        <p class="small text-muted">KAYITLI GÖZLEMCİLER YOLLARA OTOMATİK DAĞITILDI. DİLERSENİZ HER YOLUN GÖZLEMCİSİNİ LİSTEDEN DEĞİŞTİREBİLİRSİNİZ.</p>
-        <div class="row row-cols-1 row-cols-md-5 g-2" id="yolGozlemciAtamaAlani"></div>
+        <p class="small text-muted mb-3">YOL SAYISI NEZARETÇİ SAYISINA BÖLÜNEREK SIRALI BLOKLAR HALİNDE EŞİT PAYLAŞTIRILIR. İSTERSENİZ YOLLARI AÇIP KAPATABİLİR VEYA HER YOLUN NEZARETÇİSİNİ KENDİNİZ DEĞİŞTİREBİLİRSİNİZ.</p>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 row-cols-xl-5 g-3" id="yolNezaretciAtamaAlani"></div>
 
-        <div class="d-flex justify-content-between mt-3 pt-2 border-top">
-          <button onclick="atisAdimGec(1)" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
-          <button onclick="atisAdimGec(3)" class="btn btn-gri fw-bold px-4">İLERİ <i class="bi bi-arrow-right"></i></button>
+        <div class="d-flex justify-content-between mt-3 pt-3 border-top">
+          <button onclick="atisAdimGec(1)" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left me-1"></i> GERİ</button>
+          <button onclick="atisAdimGec(3)" class="btn btn-gri fw-bold px-4">İLERİ <i class="bi bi-arrow-right ms-1"></i></button>
         </div>
       </div>
 
-      <!-- ADIM 3: PERSONEL LİSTESİ KONTROLÜ VE ATIŞI BAŞLAT -->
+      <!-- ADIM 3: ATICILAR LİSTESİ VE OTOMATİK YOL ATAMASI -->
       <div id="atis-adim-3" class="custom-card" style="display:none;">
         <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-2 mb-3 gap-2">
           <div>
             <span class="badge bg-secondary me-1">✓ FAALİYET</span>
-            <span class="badge bg-secondary me-1">✓ GÖZLEMCİLER</span>
-            <span class="badge bg-dark">3 PERSONEL</span>
-            <h5 class="fw-bold mt-1 mb-0">Atışa Katılacak Personel Listesi (<span id="adim3KisiSayisi">0</span> Kişi)</h5>
-          </div>
-          <div class="d-flex gap-2">
-            <button onclick="sekmeAc('personel', document.querySelector('[data-sekme=personel]'))" class="btn btn-outline-dark btn-sm fw-bold">+ PERSONEL EKLE</button>
+            <span class="badge bg-secondary me-1">✓ NEZARETÇİLER</span>
+            <span class="badge bg-dark">3 ATICILAR</span>
+            <h5 class="fw-bold mt-2 mb-0 fs-6">Atışa Katılacak Personel Listesi (<span id="adim3KisiSayisi">0</span> Kişi)</h5>
           </div>
         </div>
 
@@ -471,141 +637,144 @@
             <thead>
               <tr>
                 <th>SIRA</th>
-                <th>ADI SOYADI</th>
                 <th>RÜTBE</th>
-                <th>SİCİL NO (11 HANE)</th>
-                <th>ATANACAK YOL</th>
-                <th>YOL GÖZLEMCİSİ</th>
+                <th>KURS NO</th>
+                <th>ADI SOYADI</th>
+                <th>ATANAN ATIŞ YOLU</th>
+                <th>YOL NEZARETÇİSİ</th>
               </tr>
             </thead>
             <tbody id="adim3PersonelTablo"></tbody>
           </table>
         </div>
 
-        <div class="d-flex justify-content-between pt-2 border-top">
-          <button onclick="atisAdimGec(2)" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
+        <div class="d-flex justify-content-between pt-3 border-top">
+          <button onclick="atisAdimGec(2)" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left me-1"></i> GERİ</button>
           <button onclick="atisiBaslat()" class="btn btn-gri fw-bold px-4">
-            <i class="bi bi-bullseye"></i> ATIŞI BAŞLAT
+            <i class="bi bi-bullseye me-1"></i> ATIŞI BAŞLAT
           </button>
         </div>
       </div>
 
-      <!-- ADIM 4: CANLI YOKLAMA VE 10 YOL ATIŞ EKRANI -->
+      <!-- ADIM 4: YOKLAMA VE CANLI ATIŞ EKRANI -->
       <div id="atis-adim-4" style="display:none;">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
-          <div class="d-flex align-items-center gap-2">
-            <button onclick="atisAdimGec(1)" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ</button>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <button onclick="atisAdimGec(1)" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> GERİ</button>
             <div>
-              <div class="d-flex align-items-center gap-2">
-                <h4 class="mb-0 fw-bold"><span id="aktifSiraNo">1</span>. SIRA</h4>
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <h4 class="mb-0 fw-bold fs-5"><span id="aktifSiraNo">1</span>. ATIŞ SIRASI</h4>
                 <span class="badge bg-dark" id="rozetAsama1">1 YOKLAMA</span>
                 <span class="badge bg-secondary" id="rozetAsama2">2 ATIŞ</span>
                 <span class="badge bg-secondary" id="rozetAsama3">3 TAMAMLA</span>
               </div>
-              <small class="text-muted" id="atisYonergeMetni">HERKES HAZIR SAYILIR. GELMEYEN VARSA GELMEDİ'YE BASIN; YERİNE SIRADAKİ GELİR. SONRA SIRAYI BAŞLAT.</small>
+              <small class="text-muted d-block mt-1" id="atisYonergeMetni">HERKES HAZIR SAYILIR. YOKSA GELMEDİ DÜĞMESİNE BASIN; YERİNE SIRADAKİ ATICI OTOMATİK GELİR. SONRA SIRAYI BAŞLATIN.</small>
             </div>
           </div>
 
-          <div class="d-flex gap-2">
-            <label class="btn btn-outline-dark btn-sm mb-0 fw-bold" style="cursor:pointer;">
-              <i class="bi bi-camera"></i> FOTOĞRAF
-              <input type="file" accept="image/*" capture="environment" hidden onchange="kanitDosyasiEklendi(this, 'FOTOĞRAF')">
-            </label>
-            <button id="btnSirayiBaslat" onclick="sirayiBaslat()" class="btn btn-gri fw-bold px-4">
-              <i class="bi bi-play-fill"></i> SIRAYI BAŞLAT
+          <div class="d-flex flex-wrap gap-2">
+            <button id="btnYoklamaGeriAl" onclick="yoklamaGeriAl()" class="btn btn-outline-dark btn-sm fw-bold" style="display:none;">
+              <i class="bi bi-arrow-counterclockwise me-1"></i> GERİ AL
             </button>
-            <button id="btnSirayiTamamla" onclick="siraTamamlaOnayAc()" class="btn btn-dark fw-bold px-4" style="display:none;">
-              <i class="bi bi-check-lg"></i> SIRAYI TAMAMLA
+            <button id="btnSirayiBaslat" onclick="sirayiBaslat()" class="btn btn-gri fw-bold px-3 py-2">
+              <i class="bi bi-play-fill me-1"></i> SIRAYI BAŞLAT
+            </button>
+            <button id="btnSirayiTamamla" onclick="siraTamamlaOnayAc()" class="btn btn-dark fw-bold px-3 py-2" style="display:none;">
+              <i class="bi bi-check-lg me-1"></i> ATIŞI BİTİR & SIRAYI TAMAMLA
             </button>
           </div>
         </div>
 
-        <!-- İstatistik & Sıradaki Grup Şeridi -->
-        <div class="row g-2 mb-3">
-          <div class="col-md-3">
-            <div class="custom-card p-2 d-flex justify-content-around text-center">
-              <div><div class="fw-bold fs-5" id="statBekleyen">0</div><small class="text-muted">BEKLEYEN</small></div>
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-lg-4">
+            <div class="custom-card p-3 h-100 d-flex justify-content-around align-items-center text-center">
+              <div><div class="fw-bold fs-5" id="statBekleyen">0</div><small class="text-muted">BEKLEYEN ATICI</small></div>
               <div><div class="fw-bold fs-5" id="statBiten">0</div><small class="text-muted">BİTEN</small></div>
               <div><div class="fw-bold fs-5" id="statToplam">0</div><small class="text-muted">TOPLAM</small></div>
             </div>
           </div>
-          <div class="col-md-9">
-            <div class="siradaki-grup-box p-2 h-100 d-flex align-items-center" style="cursor:pointer;" onclick="siradakiGrupModalAc()" title="Sıradaki grupta eksik varsa dokunun">
-              <div class="pe-3 border-end">
-                <strong class="text-dark d-block">SIRADAKİ GRUP</strong>
+          <div class="col-12 col-lg-8">
+            <div class="siradaki-grup-box p-3 h-100 d-flex flex-wrap flex-sm-nowrap align-items-center gap-2" style="cursor:pointer;" onclick="siradakiGrupModalAc()" title="Sıradaki grupta eksik varsa dokunun">
+              <div class="pe-sm-3 border-sm-end flex-shrink-0">
+                <strong class="text-dark d-block">SIRADAKİ ATICILAR</strong>
                 <small class="text-muted">eksik varsa dokunun</small>
               </div>
-              <div class="row flex-grow-1 ps-3 g-1" id="siradakiGrupContainer"></div>
+              <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5 flex-grow-1 ps-sm-2 g-2 w-100" id="siradakiGrupContainer"></div>
             </div>
           </div>
         </div>
 
-        <!-- 10 YOL KARTLARI -->
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-2" id="yollarContainer"></div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3" id="yollarContainer"></div>
       </div>
-
     </div>
 
-    <!-- =====================================================================
-         3. SEKME: PERSONEL KAYIT VE YÖNETİMİ (GÖZLEMCİ KALDIRILDI, 11 HANE ZORUNLU)
-         ===================================================================== -->
+    <!-- 3. SEKME: EXCEL TABLOSU -->
     <div id="sekme-personel" class="ekran-bolumu">
-      <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div class="d-flex align-items-center gap-2">
-          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> GERİ DÖN</button>
           <div>
-            <h4 class="fw-bold mb-0">Asker / Personel Kayıt Paneli</h4>
-            <small class="text-muted">Sicil No alanı boş geçilemez (NOT NULL), yalnızca rakam girilebilir ve 11 hane olmak zorundadır.</small>
+            <h4 class="fw-bold mb-0 fs-5">Excel Tablosu (Dereceye Göre Sıralı Görünüm)</h4>
+            <small class="text-muted">Atış yapanlar en yüksek dereceden başlayarak en üste sıralanır, GELMEDİ olanlar en alta atılır.</small>
           </div>
         </div>
       </div>
 
+      <!-- Yeni Atıcı Ekleme (Rütbe + Kurs No + Adı Soyadı) -->
       <div class="custom-card mb-3">
-        <form id="personelFormu" class="row g-2 align-items-end" novalidate>
+        <form id="personelFormu" class="row g-3 align-items-end" novalidate>
           <input type="hidden" id="duzenlenenId" value="">
-          <div class="col-md-2">
+          <div class="col-6 col-md-2">
             <label class="form-label small fw-bold mb-1">RÜTBE *</label>
             <select id="pRutbe" class="form-select form-select-sm fw-bold">
               <option value="ER">ER</option>
-              <option value="ONB">ONB</option>
-              <option value="ÇVŞ">ÇVŞ</option>
+              <option value="ONB.">ONB.</option>
+              <option value="ÇVŞ.">ÇVŞ.</option>
               <option value="UZM.ÇVŞ">UZM.ÇVŞ</option>
-              <option value="ASTSB">ASTSB</option>
-              <option value="SB">SB</option>
+              <option value="ASTSB.ÇVŞ">ASTSB.ÇVŞ</option>
+              <option value="ASTSB.ÜÇVŞ">ASTSB.ÜÇVŞ</option>
+              <option value="ASTSB.BÇVŞ">ASTSB.BÇVŞ</option>
+              <option value="TĞM">TĞM</option>
+              <option value="ÜTĞM">ÜTĞM</option>
+              <option value="YZB">YZB</option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-6 col-md-3">
+            <label class="form-label small fw-bold mb-1">KURS NO *</label>
+            <input type="text" id="pKursNo" class="form-control form-control-sm fw-bold sadece-sayi" maxlength="10" inputmode="numeric" placeholder="KURS NO GİRİNİZ">
+          </div>
+          <div class="col-12 col-md-4">
             <label class="form-label small fw-bold mb-1">ADI SOYADI *</label>
-            <input type="text" id="pAd" class="form-control form-control-sm fw-bold" placeholder="ÖRN: AHMET YILMAZ">
+            <input type="text" id="pAd" class="form-control form-control-sm fw-bold" placeholder="ASKER GİRİNİZ">
           </div>
-          <div class="col-md-3">
-            <label class="form-label small fw-bold mb-1">SİCİL NO (11 HANE SAYI) *</label>
-            <input type="text" id="pSicil" class="form-control form-control-sm fw-bold sadece-sayi" maxlength="11" inputmode="numeric" placeholder="11 HANELİ SİCİL NO">
-          </div>
-          <div class="col-md-3 d-flex gap-1">
-            <button type="submit" id="btnKaydetGuncelle" class="btn btn-gri btn-sm w-100 fw-bold">
-              <i class="bi bi-save"></i> KAYDET
+          <div class="col-12 col-md-3 d-flex gap-2">
+            <button type="submit" id="btnKaydetGuncelle" class="btn btn-gri btn-sm w-100 fw-bold py-2">
+              <i class="bi bi-plus-lg me-1"></i> ASKER EKLE
             </button>
-            <button type="button" id="btnVazgec" onclick="formuTemizle()" class="btn btn-secondary btn-sm" style="display:none;"><i class="bi bi-x-lg"></i></button>
+            <button type="button" id="btnVazgec" onclick="formuTemizle()" class="btn btn-secondary btn-sm px-3" style="display:none;"><i class="bi bi-x-lg"></i></button>
           </div>
         </form>
       </div>
 
       <div class="custom-card">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="fw-bold mb-0">KAYITLI PERSONEL (<span id="toplamPersonelSayisi">0</span>)</h6>
-          <input type="text" id="tabloAramaInput" onkeyup="personelTablosunuCiz()" class="form-control form-control-sm" style="width: 240px;" placeholder="AD VEYA SİCİL NO ARA...">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+          <h6 class="fw-bold mb-0">EXCEL SATIRLARI (<span id="toplamPersonelSayisi">0</span> KAYIT)</h6>
+          <input type="text" id="tabloAramaInput" onkeyup="personelTablosunuCiz()" class="form-control form-control-sm arama-input-esnek" placeholder="KURS NO VEYA AD SOYAD ARA...">
         </div>
         <div class="dgv-container">
           <table class="dgv-table">
             <thead>
               <tr>
-                <th>SIRA</th>
+                <th>DERECE / SIRA</th>
                 <th>RÜTBE</th>
-                <th>ADI SOYADI</th>
-                <th>SİCİL NO</th>
-                <th>KAYIT TARİHİ</th>
-                <th class="text-center">İŞLEMLER</th>
+                <th class="table-secondary">KURS NO</th>
+                <th class="table-secondary">ADI SOYADI</th>
+                <th>TARİH</th>
+                <th>NEZARETÇİ</th>
+                <th>HEDEF TÜRÜ</th>
+                <th>PUAN / SONUÇ</th>
+                <th>YOKLAMA DURUMU</th>
+                <th class="text-center">İŞLEM</th>
               </tr>
             </thead>
             <tbody id="personelTabloGovde"></tbody>
@@ -614,24 +783,22 @@
       </div>
     </div>
 
-    <!-- =====================================================================
-         4. SEKME: GÖZLEMCİLER KAYIT PANELİ
-         ===================================================================== -->
-    <div id="sekme-gozlemciler" class="ekran-bolumu">
-      <div class="d-flex justify-content-between align-items-center mb-2">
+    <!-- 4. SEKME: NEZARETÇİLER KAYIT PANELİ (SİCİL NO KALDIRILDI - SADECE RÜTBE VE AD SOYAD) -->
+    <div id="sekme-nezaretciler" class="ekran-bolumu">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div class="d-flex align-items-center gap-2">
-          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> GERİ DÖN</button>
           <div>
-            <h4 class="fw-bold mb-0">Gözlemci / Eğitmen Kayıt Paneli</h4>
-            <small class="text-muted">Sicil No alanı boş geçilemez (NOT NULL), yalnızca rakam girilebilir ve 11 hane olmak zorundadır.</small>
+            <h4 class="fw-bold mb-0 fs-5">Nezaretçi Kayıt Paneli</h4>
+            <small class="text-muted">Eklenen nezaretçiler sistem hafızasına kalıcı olarak kaydedilir; uygulama her açıldığında hazır olarak gelir.</small>
           </div>
         </div>
       </div>
 
       <div class="custom-card mb-3">
-        <form id="gozlemciFormu" class="row g-2 align-items-end" novalidate>
-          <input type="hidden" id="duzenlenenGozlemciId" value="">
-          <div class="col-md-2">
+        <form id="nezaretciFormu" class="row g-3 align-items-end" novalidate>
+          <input type="hidden" id="duzenlenenNezaretciId" value="">
+          <div class="col-12 col-md-3">
             <label class="form-label small fw-bold mb-1">RÜTBE *</label>
             <select id="gRutbe" class="form-select form-select-sm fw-bold">
               <option value="UZM.ÇVŞ">UZM.ÇVŞ</option>
@@ -643,140 +810,140 @@
               <option value="YZB">YZB</option>
             </select>
           </div>
-          <div class="col-md-4">
-            <label class="form-label small fw-bold mb-1">GÖZLEMCİ ADI SOYADI *</label>
-            <input type="text" id="gAd" class="form-control form-control-sm fw-bold" placeholder="ÖRN: LEVENT AKTAŞ">
+          <div class="col-12 col-md-6">
+            <label class="form-label small fw-bold mb-1">NEZARETÇİ ADI SOYADI *</label>
+            <input type="text" id="gAd" class="form-control form-control-sm fw-bold" placeholder="NEZARETÇİ GİRİNİZ">
           </div>
-          <div class="col-md-3">
-            <label class="form-label small fw-bold mb-1">SİCİL NO (11 HANE SAYI) *</label>
-            <input type="text" id="gSicil" class="form-control form-control-sm fw-bold sadece-sayi" maxlength="11" inputmode="numeric" placeholder="11 HANELİ SİCİL NO">
-          </div>
-          <div class="col-md-3 d-flex gap-1">
-            <button type="submit" id="btnGozlemciKaydet" class="btn btn-gri btn-sm w-100 fw-bold">
-              <i class="bi bi-save"></i> GÖZLEMCİ KAYDET
+          <div class="col-12 col-md-3 d-flex gap-2">
+            <button type="submit" id="btnNezaretciKaydet" class="btn btn-gri btn-sm w-100 fw-bold py-2">
+              <i class="bi bi-save me-1"></i> NEZARETÇİ KAYDET
             </button>
-            <button type="button" id="btnGozlemciVazgec" onclick="gozlemciFormuTemizle()" class="btn btn-secondary btn-sm" style="display:none;"><i class="bi bi-x-lg"></i></button>
+            <button type="button" id="btnNezaretciVazgec" onclick="nezaretciFormuTemizle()" class="btn btn-secondary btn-sm px-3" style="display:none;"><i class="bi bi-x-lg"></i></button>
           </div>
         </form>
       </div>
 
       <div class="custom-card">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="fw-bold mb-0">KAYITLI GÖZLEMCİLER (<span id="toplamGozlemciSayisi">0</span>)</h6>
-          <input type="text" id="gozlemciAramaInput" onkeyup="gozlemciTablosunuCiz()" class="form-control form-control-sm" style="width: 240px;" placeholder="GÖZLEMCİ ADI VEYA SİCİL ARA...">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+          <h6 class="fw-bold mb-0">KAYITLI NEZARETÇİLER (<span id="toplamNezaretciSayisi">0</span>)</h6>
+          <input type="text" id="nezaretciAramaInput" onkeyup="nezaretciTablosunuCiz()" class="form-control form-control-sm arama-input-esnek" placeholder="NEZARETÇİ ADI ARA...">
         </div>
         <div class="dgv-container">
           <table class="dgv-table">
             <thead>
               <tr>
-                <th>SIRA</th>
-                <th>RÜTBE</th>
+                <th style="width: 70px;">SIRA</th>
+                <th style="width: 150px;">RÜTBE</th>
                 <th>ADI SOYADI</th>
-                <th>SİCİL NO</th>
-                <th>KAYIT TARİHİ</th>
-                <th class="text-center">İŞLEMLER</th>
+                <th class="text-center" style="width: 100px;">İŞLEMLER</th>
               </tr>
             </thead>
-            <tbody id="gozlemciTabloGovde"></tbody>
+            <tbody id="nezaretciTabloGovde"></tbody>
           </table>
         </div>
       </div>
     </div>
 
-    <!-- =====================================================================
-         5. SEKME: ARŞİV, PUAN SIRALAMASI VE İMZALI RAPORLAR
-         ===================================================================== -->
+    <!-- 5. SEKME: SONUÇLAR & RAPOR (SADECE EXCEL'E İŞLENEN GÜNCEL VERİLER) -->
     <div id="sekme-arsiv" class="ekran-bolumu">
       <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div class="d-flex align-items-center gap-2">
-          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> GERİ DÖN</button>
           <div>
-            <h4 class="fw-bold mb-0">Arşiv ve Raporlar</h4>
-            <small class="text-muted" id="muhimmatSarfOzet">MÜHİMMAT SARFI: TOPLAM 0 ADET</small>
+            <h4 class="fw-bold mb-0 fs-5">Sonuçlar ve Katılım Durumu</h4>
+            <small class="text-muted" id="muhimmatSarfOzet">MÜHİMMAT SARFI: TOPLAM 0 ADET (SADECE EXCEL'E İŞLENEN KAYITLAR)</small>
           </div>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="secenek-btn aktif" id="tabBtnKayitlar" onclick="arsivAltSekme('kayitlar')">ATIŞ KAYITLARI</button>
-          <button class="secenek-btn" id="tabBtnSiralama" onclick="arsivAltSekme('siralama')">PUAN SIRALAMASI</button>
-          <button onclick="imzaModalAc()" class="btn btn-gri btn-sm fw-bold"><i class="bi bi-pen"></i> ATIŞ SORUMLUSU İMZASI & RAPOR</button>
         </div>
       </div>
 
-      <div id="arsiv-kayitlar" class="custom-card">
-        <div class="d-flex justify-content-between mb-2">
-          <input type="text" id="arsivArama" onkeyup="arsivTablosunuCiz()" class="form-control form-control-sm" style="width:280px;" placeholder="KİŞİ ADI, SİCİL NO VEYA FAALİYET ARA...">
-          <button onclick="raporYazdirAc()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-printer"></i> FAALİYET RAPORU / SARF TUTANAĞI</button>
+      <div class="custom-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+          <h6 class="fw-bold mb-0">EXCEL'E İŞLENMİŞ ATIŞ SONUÇLARI (<span id="islenmisKayitSayisi">0</span> KAYIT)</h6>
+          <input type="text" id="arsivArama" onkeyup="arsivTablosunuCiz()" class="form-control form-control-sm arama-input-esnek" placeholder="KİŞİ ADI VEYA KURS NO ARA...">
         </div>
         <div class="dgv-container">
           <table class="dgv-table">
             <thead>
               <tr>
-                <th>FAALİYET / TARİH</th>
-                <th>SIRA / YOL</th>
-                <th>RÜTBE & AD SOYAD</th>
-                <th>SİCİL</th>
-                <th>GÖZLEMCİ</th>
-                <th>İSABET / MÜHİMMAT</th>
-                <th>100 PUAN</th>
-                <th>DURUM</th>
+                <th>DERECE</th>
+                <th>RÜTBE</th>
+                <th>KURS NO</th>
+                <th>ADI SOYADI</th>
+                <th>TARİH</th>
+                <th>NEZARETÇİ</th>
+                <th>HEDEF TÜRÜ</th>
+                <th>PUAN / SONUÇ</th>
+                <th>YOKLAMA DURUMU</th>
               </tr>
             </thead>
             <tbody id="arsivTabloGovde"></tbody>
           </table>
         </div>
       </div>
-
-      <div id="arsiv-siralama" class="custom-card" style="display:none;">
-        <p class="small text-muted mb-2">100 ÜZERİNDEN ORTALAMA PUANA GÖRE SIRALANIR; EŞİT PUANDA AYNI SIRA NUMARASI VERİLİR VE ALFABETİK DİZİLİR.</p>
-        <div class="dgv-container">
-          <table class="dgv-table">
-            <thead>
-              <tr>
-                <th>SIRA</th>
-                <th>ADI SOYADI</th>
-                <th>RÜTBESİ</th>
-                <th>SİCİL NO</th>
-                <th>ATIŞ SAYISI</th>
-                <th>ORTALAMA</th>
-                <th>EN İYİ</th>
-                <th>EN DÜŞÜK</th>
-                <th>SON PUAN</th>
-              </tr>
-            </thead>
-            <tbody id="siralamaTabloGovde"></tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
-    <!-- =====================================================================
-         6. SEKME: ADMİN PANELİ (BİRLİK, ATIŞ YERİ YÖNETİMİ VE YEDEKLEME)
-         ===================================================================== -->
+    <!-- 6. SEKME: ADMİN PANELİ -->
     <div id="sekme-admin" class="ekran-bolumu">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left"></i> GERİ DÖN</button>
-        <div>
-          <h4 class="fw-bold mb-0">Admin Paneli — Birlik ve Atış Yeri Yönetimi</h4>
-          <small class="text-muted">Buraya eklediğiniz Birlik ve Atış Yerleri yeni atış başlatırken listede doğrudan seçilebilir.</small>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <button onclick="oncekiSayfayaDon()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> GERİ DÖN</button>
+          <div>
+            <h4 class="fw-bold mb-0 fs-5">Admin Paneli — Dosya, PDF Rapor ve Birlik Yönetimi</h4>
+            <small class="text-muted">Yeni işlenmiş Excel indirme, farklı Excel bağlama, nezaretçi imzası ve PDF tutanak işlemleri burada toplanmıştır.</small>
+          </div>
         </div>
       </div>
 
+      <!-- EXCEL & PDF & İMZA YÖNETİM KARTI -->
+      <div class="custom-card mb-3 border-dark">
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-2 mb-3 gap-2">
+          <div>
+            <h6 class="fw-bold mb-0"><i class="bi bi-file-earmark-excel-fill text-success me-1"></i> Excel Dosyası, Nezaretçi İmzası ve PDF Rapor İşlemleri</h6>
+            <small class="text-muted" id="adminBagliDosyaDetay">Orijinal Excel korunur; dereceli yeni işlenmiş Excel oluşturulur.</small>
+          </div>
+          <span class="badge bg-success px-3 py-2" id="adminImzaDurumRozeti">İMZA DURUMU: BEKLİYOR</span>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-12 col-sm-6 col-lg-3">
+            <button onclick="islenmisExcelIndir()" class="btn btn-gri w-100 fw-bold py-2">
+              <i class="bi bi-download me-1"></i> YENİ İŞLENMİŞ EXCEL İNDİR
+            </button>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <button onclick="excelDosyasiSecVeYukle()" class="btn btn-outline-dark w-100 fw-bold py-2">
+              <i class="bi bi-arrow-repeat me-1"></i> FARKLI EXCEL BAĞLA
+            </button>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <button onclick="imzaModalAc()" class="btn btn-outline-dark w-100 fw-bold py-2">
+              <i class="bi bi-pen me-1"></i> NEZARETÇİ İMZASI AL
+            </button>
+          </div>
+          <div class="col-12 col-sm-6 col-lg-3">
+            <button onclick="raporYazdirAc()" class="btn btn-dark w-100 fw-bold py-2">
+              <i class="bi bi-file-earmark-pdf me-1"></i> PDF RAPOR OLUŞTUR
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABUR / BİRLİK VE ATIŞ YERİ KAYITLARI -->
       <div class="row g-3 mb-3">
-        <!-- BİRLİK YÖNETİMİ -->
-        <div class="col-md-6">
+        <div class="col-12 col-md-6">
           <div class="custom-card h-100">
-            <h6 class="fw-bold border-bottom pb-2"><i class="bi bi-flag-fill"></i> Birlik Kayıtları</h6>
+            <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="bi bi-flag-fill me-1"></i> Tabur / Birlik Kayıtları</h6>
             <form id="birlikFormu" class="d-flex gap-2 mb-3" novalidate>
-              <input type="text" id="yeniBirlikInput" class="form-control form-control-sm fw-bold" placeholder="ÖRN: 1. PİYADE EĞİTİM TABURU">
-              <button type="submit" class="btn btn-gri btn-sm fw-bold px-3 text-nowrap"><i class="bi bi-plus-lg"></i> EKLE</button>
+              <input type="text" id="yeniBirlikInput" class="form-control form-control-sm fw-bold" placeholder="TABUR / BİRLİK GİRİNİZ">
+              <button type="submit" class="btn btn-gri btn-sm fw-bold px-3 text-nowrap"><i class="bi bi-plus-lg me-1"></i> EKLE</button>
             </form>
             <div class="dgv-container" style="max-height: 250px;">
-              <table class="dgv-table">
+              <table class="dgv-table" style="min-width: 100%;">
                 <thead>
                   <tr>
-                    <th style="width: 50px;">SIRA</th>
-                    <th>BİRLİK ADI</th>
-                    <th class="text-center" style="width: 70px;">İŞLEM</th>
+                    <th style="width: 55px;">SIRA</th>
+                    <th>TABUR / BİRLİK ADI</th>
+                    <th class="text-center" style="width: 75px;">İŞLEM</th>
                   </tr>
                 </thead>
                 <tbody id="birlikTabloGovde"></tbody>
@@ -785,21 +952,20 @@
           </div>
         </div>
 
-        <!-- ATIŞ YERİ / POLİGON YÖNETİMİ -->
-        <div class="col-md-6">
+        <div class="col-12 col-md-6">
           <div class="custom-card h-100">
-            <h6 class="fw-bold border-bottom pb-2"><i class="bi bi-geo-alt-fill"></i> Atış Yeri / Poligon Kayıtları</h6>
+            <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="bi bi-geo-alt-fill me-1"></i> Atış Yeri / Poligon Kayıtları</h6>
             <form id="atisYeriFormu" class="d-flex gap-2 mb-3" novalidate>
-              <input type="text" id="yeniAtisYeriInput" class="form-control form-control-sm fw-bold" placeholder="ÖRN: 100 METRE ATIŞ POLİGONU">
-              <button type="submit" class="btn btn-gri btn-sm fw-bold px-3 text-nowrap"><i class="bi bi-plus-lg"></i> EKLE</button>
+              <input type="text" id="yeniAtisYeriInput" class="form-control form-control-sm fw-bold" placeholder="ATIŞ YERİ GİRİNİZ">
+              <button type="submit" class="btn btn-gri btn-sm fw-bold px-3 text-nowrap"><i class="bi bi-plus-lg me-1"></i> EKLE</button>
             </form>
             <div class="dgv-container" style="max-height: 250px;">
-              <table class="dgv-table">
+              <table class="dgv-table" style="min-width: 100%;">
                 <thead>
                   <tr>
-                    <th style="width: 50px;">SIRA</th>
+                    <th style="width: 55px;">SIRA</th>
                     <th>ATIŞ YERİ / POLİGON ADI</th>
-                    <th class="text-center" style="width: 70px;">İŞLEM</th>
+                    <th class="text-center" style="width: 75px;">İŞLEM</th>
                   </tr>
                 </thead>
                 <tbody id="atisYeriTabloGovde"></tbody>
@@ -808,62 +974,31 @@
           </div>
         </div>
       </div>
-
-      <!-- TAM YEDEKLEME KARTI -->
-      <div class="custom-card">
-        <h6 class="fw-bold"><i class="bi bi-download"></i> Sistem Yedekleme ve Geri Yükleme (JSON)</h6>
-        <p class="small text-muted mb-2">Bütün personel, gözlemci, birlik, atış yeri, atış kayıtları ve imza verilerini tek dosyaya yedekler.</p>
-        <div class="d-flex gap-2">
-          <button onclick="tamYedekIndir()" class="btn btn-gri btn-sm fw-bold"><i class="bi bi-download"></i> TAM YEDEK AL</button>
-          <label class="btn btn-outline-dark btn-sm fw-bold mb-0" style="cursor:pointer;">
-            <i class="bi bi-upload"></i> YEDEKTEN GERİ YÜKLE
-            <input type="file" accept=".json" hidden onchange="tamYedekYukle(this)">
-          </label>
-        </div>
-      </div>
     </div>
 
   </div>
 </div>
 
-<!-- =========================================================================
-     MODALLAR
-     ========================================================================= -->
+<!-- MODALLAR -->
 <div class="modal fade" id="duzeltModal" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="duzeltBaslik">YOL DÜZELTME</h5>
+        <h5 class="modal-title fw-bold" id="duzeltBaslik">NOT VE İŞLEM GEÇMİŞİ</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="duzeltYolIndex">
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <div>
-            <small class="text-muted d-block">MEVCUT İSABET</small>
-            <span class="fs-2 fw-bold" id="duzeltMevcutSkor">0</span>
-          </div>
-          <button onclick="duzeltEksiBir()" class="btn btn-outline-dark fw-bold">-1</button>
-          <div class="flex-grow-1">
-            <small class="text-muted d-block">DOĞRU SAYIYI YAZ</small>
-            <div class="input-group input-group-sm">
-              <input type="number" id="duzeltYeniSayi" class="form-control" min="0" max="50">
-              <button onclick="duzeltSayiYaz()" class="btn btn-gri fw-bold">YAZ</button>
-            </div>
-          </div>
-        </div>
-
         <div class="mb-3">
           <label class="form-label small fw-bold">KİŞİYE ÖZEL NOT</label>
           <div class="input-group input-group-sm">
-            <input type="text" id="duzeltNotInput" class="form-control fw-bold" placeholder="ÖRN: TUTUKLUK GİDERİLDİ, TEKRAR ATIŞ VERİLDİ">
-            <button onclick="duzeltNotEkle()" class="btn btn-secondary">NOT EKLE</button>
+            <input type="text" id="duzeltNotInput" class="form-control fw-bold" placeholder="NOT GİRİNİZ">
+            <button onclick="duzeltNotEkle()" class="btn btn-gri fw-bold">NOT EKLE</button>
           </div>
         </div>
-
         <div class="border-top pt-2">
           <strong class="small d-block mb-1">İŞLEM GEÇMİŞİ (DEĞİŞİKLİK İZİ)</strong>
-          <div id="duzeltGecmisListesi" class="small text-muted" style="max-height:130px; overflow-y:auto;"></div>
+          <div id="duzeltGecmisListesi" class="small text-muted" style="max-height:150px; overflow-y:auto;"></div>
         </div>
       </div>
       <div class="modal-footer">
@@ -874,10 +1009,10 @@
 </div>
 
 <div class="modal fade" id="siradakiGrupModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold">SIRADAKİ GRUP: EKSİK VAR MI?</h5>
+        <h5 class="modal-title fw-bold">SIRADAKİ ATICILAR: EKSİK VAR MI?</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="siradakiGrupModalIcerik"></div>
@@ -889,31 +1024,72 @@
 </div>
 
 <div class="modal fade" id="siraTamamlaModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="siraTamamlaBaslik">1. SIRA TAMAMLANSIN MI?</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title fw-bold" id="siraTamamlaBaslik">ATIŞ BİTTİ — SIRADAKİ ATIŞ SIRASINA GEÇELİM Mİ?</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body" id="siraTamamlaIcerik"></div>
+      <div class="modal-body">
+        <div class="alert alert-secondary py-2 px-3 small fw-bold mb-2" id="siradakiGecisBilgiMetni">
+          BU SIRADAKİ SONUÇLAR TABLOYA İŞLENECEK, DERECESİNE GÖRE SIRALANACAK VE SIRADAKİ ATICILAR YOLLARA YERLEŞTİRİLECEKTİR.
+        </div>
+        <div id="siraTamamlaIcerik"></div>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">GERİ DÖN</button>
-        <button type="button" onclick="sirayiKesinTamamla()" class="btn btn-gri fw-bold px-4">SIRAYI TAMAMLA VE KAYDET</button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">HAYIR, GERİ DÖN</button>
+        <button type="button" onclick="sirayiKesinTamamla()" class="btn btn-gri fw-bold px-4">EVET, KAYDET VE SIRADAKİ SIRAYA GEÇ</button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ATIŞ BİTİNCE NEZARETÇİ İMZASI VE YENİ EXCEL İNDİRME MODALI -->
+<div class="modal fade" id="atisBitisVeImzaModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title fw-bold"><i class="bi bi-check-circle-fill text-success me-1"></i> TÜM ATIŞLAR TAMAMLANDI</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="small text-muted mb-2">
+          Tüm atıcıların sonuçları Excel tablosuna işlendi ve derecesine göre sıralandı.<br>
+          Lütfen <b>Nezaretçi İmzasını</b> atın (PDF çıktısında kullanılacaktır) ve isterseniz <b>Yeni İşlenmiş Excel</b> dosyasını indirin.
+        </p>
+        <div class="fw-bold small mb-1">NEZARETÇİ İMZASI</div>
+        <canvas id="bitisImzaCanvas" width="420" height="150" style="max-width:100%; border:2px dashed #6c757d; border-radius:8px; background:#fff; touch-action:none;"></canvas>
+        <div class="mt-2 d-flex justify-content-between align-items-center">
+          <button type="button" onclick="bitisImzaTemizle()" class="btn btn-outline-secondary btn-sm">İMZAYI TEMİZLE</button>
+          <button type="button" onclick="bitisImzaKaydet()" class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-pen me-1"></i> İMZAYI KAYDET</button>
+        </div>
+        <div id="bitisImzaOnayYazisi" class="small text-success fw-bold mt-2" style="display:none;">
+          <i class="bi bi-check-circle-fill"></i> NEZARETÇİ İMZASI KAYDEDİLDİ!
+        </div>
+      </div>
+      <div class="modal-footer d-flex flex-column gap-2">
+        <button type="button" onclick="bitisImzaKaydetVeExcelIndir()" class="btn btn-gri w-100 fw-bold py-2">
+          <i class="bi bi-download me-1"></i> İMZAYI KAYDET & YENİ İŞLENMİŞ EXCEL İNDİR
+        </button>
+        <button type="button" onclick="bitisModalKapatAdminGec()" class="btn btn-outline-secondary btn-sm w-100">
+          ŞİMDİ İNDİRME (DAHA SONRA ADMİN PANELİNDEN İNDİR)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MANUEL NEZARETÇİ İMZA MODALI (ADMIN PANELİNDEN) -->
 <div class="modal fade" id="imzaModal" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold">ATIŞ SORUMLUSU İMZASI</h5>
+        <h5 class="modal-title fw-bold">NEZARETÇİ İMZASI</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
-        <div class="fw-bold mb-2" id="imzaSorumluBilgi">ATIŞ SORUMLUSU</div>
-        <canvas id="imzaCanvas" width="420" height="170" style="border:2px dashed #6c757d; border-radius:8px; background:#fff; touch-action:none;"></canvas>
+        <div class="fw-bold mb-2">NEZARETÇİ İMZASI (PDF RAPORUNDA KULLANILIR)</div>
+        <canvas id="imzaCanvas" width="420" height="170" style="max-width:100%; border:2px dashed #6c757d; border-radius:8px; background:#fff; touch-action:none;"></canvas>
         <div class="mt-2 d-flex justify-content-between">
           <button type="button" onclick="imzaTemizle()" class="btn btn-outline-secondary btn-sm">TEMİZLE</button>
           <small class="text-muted">Ekrana parmağınızla veya fareyle imza atın.</small>
@@ -928,10 +1104,10 @@
 </div>
 
 <div class="modal fade" id="kisiGecmisModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="kisiGecmisBaslik">PERSONEL GELİŞİMİ</h5>
+        <h5 class="modal-title fw-bold" id="kisiGecmisBaslik">PERSONEL ATIŞ KAYDI</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="kisiGecmisIcerik"></div>
@@ -945,7 +1121,7 @@
       <div class="modal-header no-print">
         <h5 class="modal-title fw-bold">RAPOR ÖNİZLEME (A4 YAZDIR / PDF KAYDET)</h5>
         <div class="d-flex gap-2">
-          <button onclick="window.print()" class="btn btn-gri btn-sm fw-bold"><i class="bi bi-printer"></i> YAZDIR / PDF OLARAK KAYDET</button>
+          <button onclick="window.print()" class="btn btn-gri btn-sm fw-bold"><i class="bi bi-printer me-1"></i> YAZDIR / PDF OLARAK KAYDET</button>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
       </div>
@@ -958,7 +1134,7 @@
 
 <script>
   // =========================================================================
-  // 0. TÜRKÇE BÜYÜK HARF VE SADECE SAYI (SİCİL NO) KONTROL MOTORU
+  // 0. TÜRKÇE BÜYÜK HARF VE SADECE SAYI KONTROL MOTORU
   // =========================================================================
   function buyukHarfTr(metin) {
     if (metin === null || metin === undefined) return "";
@@ -968,13 +1144,15 @@
   document.addEventListener('input', function(e) {
     if (!e.target) return;
 
-    // Sicil No gibi sadece rakam kabul eden alanlarda harf ve sembolleri anında temizle
     if (e.target.classList.contains('sadece-sayi')) {
-      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 11);
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
       return;
     }
 
-    // Diğer metin alanlarında Türkçe büyük harf zorunluluğu
+    if (e.target.classList.contains('puan-numpad-input')) {
+      return;
+    }
+
     if (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target.type === 'text')) {
       const imlecBas = e.target.selectionStart;
       const imlecSon = e.target.selectionEnd;
@@ -987,95 +1165,91 @@
 
 
   // =========================================================================
-  // 1. GLOBAL DURUM, SAYFA GEÇMİŞİ VE VERİ DEPOSU
+  // 1. KALICI HAFIZA (NEZARETÇİLER & BİRLİK/YER) + ORİJİNAL EXCEL KORUMALI DURUM
   // =========================================================================
-  let dosyaTutucu = null;
+  const LS_KEY_NEZARETCILER = "atis_sistemi_kalici_nezaretciler_v2";
+  const LS_KEY_BIRLIKLER = "atis_sistemi_kalici_birlikler_v1";
+  const LS_KEY_ATIS_YERLERI = "atis_sistemi_kalici_atis_yerleri_v1";
+
+  let bagliExcelDosyaAdi = "";
   let kayitliImzaDataUrl = null;
   let aktifSekmeAdi = "anaekran";
   let sayfaGecmisi = [];
 
-  let birlikListesi = ["PİYADE EĞİTİM TABURU"];
-  let atisYeriListesi = ["100 METRE ATIŞ POLİGONU"];
-  let gozlemciListesi = [];
-  let personelListesi = [];
-  let atisArsivi = [];
+  let birlikListesi = JSON.parse(localStorage.getItem(LS_KEY_BIRLIKLER) || "[]");
+  let atisYeriListesi = JSON.parse(localStorage.getItem(LS_KEY_ATIS_YERLERI) || "[]");
+  let nezaretciListesi = JSON.parse(localStorage.getItem(LS_KEY_NEZARETCILER) || "[]");
+
+  let excelTablosu = [];
 
   let aktifFaaliyet = {
     kod: "ATS-2026-0001",
-    adi: "TERMAL HEDEF ATIŞI",
-    birlik: "PİYADE EĞİTİM TABURU",
-    yer: "100 METRE ATIŞ POLİGONU",
-    sorumlu: "",
-    zaman: "GÜNDÜZ",
-    hedef: "TERMAL",
-    amac: "EĞİTİM",
-    mermi: 3,
+    adi: "TEMEL ATIŞ EĞİTİMİ",
+    birlik: "",
+    yer: "",
+    silah: "TÜFEK",
+    hedefTuru: "SABİT HEDEF",
+    mermi: 5,
     yolSayisi: 10,
+    hedefSayisi: 2,
     baslamaZamani: ""
   };
 
-  let yolGozlemcileri = {};
+  let yolAyarlari = {};
   let atisKuyrugu = [];
   let siraNumarasi = 1;
   let aktifYollar = [];
-  let sonYoklamaYedek = null;
+  let yoklamaGecmisYigini = [];
   let atisBasladiMi = false;
   let bitenSayisi = 0;
 
-  let seciliGozlemciId = null;
+  let seciliNezaretciId = null;
   let seciliSatirId = null;
+
+  function kaliciVerileriKaydet() {
+    localStorage.setItem(LS_KEY_NEZARETCILER, JSON.stringify(nezaretciListesi));
+    localStorage.setItem(LS_KEY_BIRLIKLER, JSON.stringify(birlikListesi));
+    localStorage.setItem(LS_KEY_ATIS_YERLERI, JSON.stringify(atisYeriListesi));
+    ekranSayaclariniGuncelle();
+  }
 
   window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('bugunTarihMetni').innerText = buyukHarfTr(new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-    imzaCanvasHazirla();
-    yerelHafizadanYukle();
+    imzaCanvasHazirla('imzaCanvas');
+    imzaCanvasHazirla('bitisImzaCanvas');
     adminListeleriniCiz();
     selectListeleriniDoldur();
+    personelTablosunuCiz();
+    nezaretciTablosunuCiz();
+    arsivTablosunuCiz();
+    hedefTuruArayuzGuncelle();
+    ekranSayaclariniGuncelle();
   });
 
   function cihazSaatiniAl() {
     return new Date().toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
-  function yerelHafizayaKaydet() {
-    const veri = { kayitliImzaDataUrl, birlikListesi, atisYeriListesi, gozlemciListesi, personelListesi, atisArsivi, aktifFaaliyet, atisKuyrugu, siraNumarasi, aktifYollar, atisBasladiMi, bitenSayisi };
-    localStorage.setItem('poligon_kayit_yedek', JSON.stringify(veri));
-    devamEdenAtisKartiniGuncelle();
-  }
+  function ekranSayaclariniGuncelle() {
+    document.getElementById('anaEkranKayitRozeti').innerText = `${excelTablosu.length} KAYIT YÜKLÜ`;
+    document.getElementById('anaEkranNezaretciRozeti').innerText = `${nezaretciListesi.length} NEZARETÇİ KAYITLI`;
 
-  function yerelHafizadanYukle() {
-    const kayit = localStorage.getItem('poligon_kayit_yedek');
-    if (!kayit) return;
-    try {
-      const v = JSON.parse(kayit);
-      kayitliImzaDataUrl = v.kayitliImzaDataUrl || null;
-      if (Array.isArray(v.birlikListesi) && v.birlikListesi.length > 0) birlikListesi = v.birlikListesi.map(buyukHarfTr);
-      if (Array.isArray(v.atisYeriListesi) && v.atisYeriListesi.length > 0) atisYeriListesi = v.atisYeriListesi.map(buyukHarfTr);
-      gozlemciListesi = (v.gozlemciListesi || []).map(g => ({ ...g, rutbe: buyukHarfTr(g.rutbe), ad: buyukHarfTr(g.ad), sicil: String(g.sicil || "").replace(/\D/g, '') }));
-      personelListesi = (v.personelListesi || []).map(p => ({ ...p, rutbe: buyukHarfTr(p.rutbe), ad: buyukHarfTr(p.ad), sicil: String(p.sicil || "").replace(/\D/g, '') }));
-      atisArsivi = v.atisArsivi || [];
-      if (v.aktifFaaliyet) aktifFaaliyet = v.aktifFaaliyet;
-      atisKuyrugu = v.atisKuyrugu || [];
-      siraNumarasi = v.siraNumarasi || 1;
-      aktifYollar = v.aktifYollar || [];
-      atisBasladiMi = v.atisBasladiMi || false;
-      bitenSayisi = v.bitenSayisi || 0;
+    const imzaRozet = document.getElementById('adminImzaDurumRozeti');
+    if (imzaRozet) {
+      if (kayitliImzaDataUrl) {
+        imzaRozet.className = "badge bg-success px-3 py-2";
+        imzaRozet.innerText = "NEZARETÇİ İMZASI: KAYITLI ✓";
+      } else {
+        imzaRozet.className = "badge bg-secondary px-3 py-2";
+        imzaRozet.innerText = "NEZARETÇİ İMZASI: HENÜZ ATILMADI";
+      }
+    }
 
-      adminListeleriniCiz();
-      gozlemciTablosunuCiz();
-      selectListeleriniDoldur();
-      personelTablosunuCiz();
-      arsivTablosunuCiz();
-      devamEdenAtisKartiniGuncelle();
-    } catch (e) {}
-  }
-
-  function devamEdenAtisKartiniGuncelle() {
     const kart = document.getElementById('devamEdenAtisKarti');
     if (atisKuyrugu.length > 0 && aktifYollar.length > 0) {
       kart.style.setProperty('display', 'flex', 'important');
       document.getElementById('devamFaaliyetAdi').innerText = buyukHarfTr(aktifFaaliyet.adi);
-      document.getElementById('devamFaaliyetDetay').innerText = `${aktifFaaliyet.kod} • ${atisKuyrugu.length} KİŞİ • ${siraNumarasi}. SIRA`;
+      document.getElementById('devamFaaliyetDetay').innerText = `${aktifFaaliyet.kod} • ${aktifFaaliyet.silah} • ${aktifFaaliyet.hedefTuru} • ${atisKuyrugu.length} ATICI • ${siraNumarasi}. SIRA`;
     } else {
       kart.style.setProperty('display', 'none', 'important');
     }
@@ -1083,153 +1257,273 @@
 
 
   // =========================================================================
-  // 2. ÇOK SAYFALI EXCEL VERİTABANI MOTORU
+  // 2. DERECEYE GÖRE SIRALAMA MOTORU (100 PUAN ÜZERİNDEN VE GELMEDİ ALTTA)
   // =========================================================================
-  async function yeniExcelOlusturVeBagla() {
-    try {
-      dosyaTutucu = await window.showSaveFilePicker({
-        suggestedName: 'ATISSISTEMI.xlsx',
-        types: [{ description: 'Excel Dosyası', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
-      });
-      await exceleKaydet();
-      baglantiDurumunuGuncelle(dosyaTutucu.name);
-      alert("EXCEL VERİTABANI OLUŞTURULDU VE BAĞLANDI!");
-    } catch (err) {
-      if (err.name !== 'AbortError') alert("DOSYA OLUŞTURULAMADI: " + err.message);
+  function puanSkoruCozumle(satir) {
+    if (typeof satir.skor === 'number' && !isNaN(satir.skor)) {
+      return satir.skor;
     }
+    const metin = String(satir.puan ?? "").trim();
+    if (!metin) return 0;
+    const eslesme = metin.match(/^(\d+(?:[.,]\d+)?)/);
+    return eslesme ? Number(eslesme[1].replace(',', '.')) : 0;
   }
 
-  async function mevcutExcelBagla() {
-    try {
-      const [handle] = await window.showOpenFilePicker({
-        types: [{ description: 'Excel Dosyası', accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] } }]
-      });
-      dosyaTutucu = handle;
-      const file = await dosyaTutucu.getFile();
-      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+  function durumOncelikPuani(durumMetni) {
+    const d = buyukHarfTr(durumMetni || "").trim();
+    if (d === "GELDİ") return 1;
+    if (d === "" || d === "BEKLİYOR") return 2;
+    return 3;
+  }
 
-      if (wb.Sheets["Birlikler"]) {
-        const okunanBirlikler = XLSX.utils.sheet_to_json(wb.Sheets["Birlikler"]).map(r => buyukHarfTr(r["Birlik Adı"] || "")).filter(Boolean);
-        if (okunanBirlikler.length > 0) birlikListesi = okunanBirlikler;
+  function excelTablosunuDereceyeGoreSirala() {
+    excelTablosu.sort((a, b) => {
+      const oncelikA = durumOncelikPuani(a.yoklamaDurumu);
+      const oncelikB = durumOncelikPuani(b.yoklamaDurumu);
+      if (oncelikA !== oncelikB) return oncelikA - oncelikB;
+
+      if (oncelikA === 1 && oncelikB === 1) {
+        const skorA = puanSkoruCozumle(a);
+        const skorB = puanSkoruCozumle(b);
+        if (skorB !== skorA) return skorB - skorA;
       }
-      if (wb.Sheets["Atis_Yerleri"]) {
-        const okunanYerler = XLSX.utils.sheet_to_json(wb.Sheets["Atis_Yerleri"]).map(r => buyukHarfTr(r["Atış Yeri"] || "")).filter(Boolean);
-        if (okunanYerler.length > 0) atisYeriListesi = okunanYerler;
+
+      return (a.orijinalSira || 0) - (b.orijinalSira || 0);
+    });
+  }
+
+
+  // =========================================================================
+  // 3. KURS NO VE TÜREVLERİNİ OTOMATİK ALGILAYAN EXCEL MOTORU
+  // =========================================================================
+  function baslikNormalizeEt(metin) {
+    return buyukHarfTr(metin || "")
+      .replace(/[^A-ZÇĞİÖŞÜ0-9]/g, '');
+  }
+
+  function sutunDegeriBul(satirObjesi, olasiBasliklar) {
+    const anahtarlar = Object.keys(satirObjesi);
+    const normalizeHedefler = olasiBasliklar.map(h => baslikNormalizeEt(h));
+
+    // 1. Tam eşleşme kontrolü
+    for (const hedefNorm of normalizeHedefler) {
+      const eslesen = anahtarlar.find(k => baslikNormalizeEt(k) === hedefNorm);
+      if (eslesen && satirObjesi[eslesen] !== undefined && satirObjesi[eslesen] !== null && String(satirObjesi[eslesen]).trim() !== "") {
+        return String(satirObjesi[eslesen]).trim();
       }
-      if (wb.Sheets["Gozlemciler"]) {
-        gozlemciListesi = XLSX.utils.sheet_to_json(wb.Sheets["Gozlemciler"]).map((r, i) => ({
-          id: r.ID || Date.now() + i,
-          rutbe: buyukHarfTr(r["Rütbe"] || r.Rutbe || "UZM.ÇVŞ"),
-          ad: buyukHarfTr(r["Adı Soyadı"] || r.AdSoyad || ""),
-          sicil: String(r["Sicil No"] || r.Sicil || "").replace(/\D/g, ''),
-          kayitTarihi: r["Kayıt Tarihi"] || "-"
-        }));
+    }
+
+    // 2. Kısmi / türev eşleşme kontrolü (Örn: "1. DÖNEM KURS NO", "KURS NUMARASI (YENİ)")
+    for (const hedefNorm of normalizeHedefler) {
+      if (hedefNorm.length < 4) continue;
+      const eslesen = anahtarlar.find(k => baslikNormalizeEt(k).includes(hedefNorm));
+      if (eslesen && satirObjesi[eslesen] !== undefined && satirObjesi[eslesen] !== null && String(satirObjesi[eslesen]).trim() !== "") {
+        return String(satirObjesi[eslesen]).trim();
       }
-      if (wb.Sheets["Personel"]) {
-        personelListesi = XLSX.utils.sheet_to_json(wb.Sheets["Personel"]).map((r, i) => ({
-          id: r.ID || Date.now() + i + 1000,
-          rutbe: buyukHarfTr(r["Rütbe"] || r.Rutbe || "ER"),
-          ad: buyukHarfTr(r["Adı Soyadı"] || r.AdSoyad || ""),
-          sicil: String(r["Sicil No"] || r.Sicil || "").replace(/\D/g, ''),
-          kayitTarihi: r["Kayıt Tarihi"] || "-"
-        }));
+    }
+    return "";
+  }
+
+  function satirdanBilgileriCozumle(satirObjesi) {
+    const rutbe = buyukHarfTr(sutunDegeriBul(satirObjesi, ["RÜTBE", "RÜTBESİ", "SINIF VE RÜTBE", "RÜTBE SINIF"]));
+
+    // KURS NO ve tüm türevleri (ek olarak eski Sicil No başlıklarını da destekler)
+    let hamKursNo = sutunDegeriBul(satirObjesi, [
+      "KURS NO",
+      "KURS NUMARASI",
+      "KURSNO",
+      "KURSNUMARASI",
+      "KURSİYER NO",
+      "KURSİYER NUMARASI",
+      "KURS",
+      "NO",
+      "NUMARA",
+      "SİCİL NO",
+      "SİCİL",
+      "SİCİL NUMARASI",
+      "SİCİLNO"
+    ]);
+    let kursNo = hamKursNo.replace(/\D/g, '').slice(0, 10);
+
+    let ad = buyukHarfTr(sutunDegeriBul(satirObjesi, [
+      "ADI SOYADI",
+      "AD SOYAD",
+      "ADISOYADI",
+      "ADSOYAD",
+      "İSİM SOYİSİM",
+      "İSİM",
+      "KURSİYER ADI",
+      "KURSİYER ADI SOYADI",
+      "PERSONEL ADI",
+      "ATICI"
+    ]));
+
+    // Başlıklar tamamen farklıysa satır içeriğinden akıllı çıkarım yap
+    if (!kursNo || !ad) {
+      const degerler = Object.values(satirObjesi).map(v => String(v ?? "").trim()).filter(v => v !== "");
+      for (const val of degerler) {
+        const rakamlar = val.replace(/\D/g, '');
+        if (!kursNo && rakamlar.length >= 1 && rakamlar.length <= 10 && /^\d+$/.test(val.replace(/\s+/g, ''))) {
+          kursNo = rakamlar;
+        } else if (!ad && /[A-ZÇĞİÖŞÜa-zçğıöşü]/.test(val) && buyukHarfTr(val) !== rutbe) {
+          ad = buyukHarfTr(val);
+        }
       }
-      if (wb.Sheets["Atis_Kayitlari"]) {
-        atisArsivi = XLSX.utils.sheet_to_json(wb.Sheets["Atis_Kayitlari"]).map(r => ({
-          faaliyetKod: buyukHarfTr(r["Faaliyet No"] || "ATS-2026-0001"),
-          faaliyetAdi: buyukHarfTr(r["Faaliyet Adı"] || "ATIŞ EĞİTİMİ"),
-          tarih: r["Atış Tarihi"] || "",
-          sira: r["Sıra No"] || 1,
-          yol: r["Yol No"] || 1,
-          rutbe: buyukHarfTr(r["Rütbe"] || ""),
-          ad: buyukHarfTr(r["Adı Soyadı"] || ""),
-          sicil: String(r["Sicil No"] || "").replace(/\D/g, ''),
-          gozlemci: buyukHarfTr(r["Gözlemci"] || ""),
-          atilanMermi: Number(r["Atılan Fişek"] || 0),
-          isabet: Number(r["İsabet"] || 0),
-          puan100: Number(r["100 Üzerinden Puan"] || 0),
-          durum: buyukHarfTr(r["Katılım Durumu"] || "HAZIR"),
-          gecmis: []
-        }));
+    }
+
+    return { rutbe: rutbe || "ER", kursNo, ad };
+  }
+
+  function excelDosyasiSecVeYukle() {
+    document.getElementById('gizliExcelInput').click();
+  }
+
+  async function excelDosyaSecildi(input) {
+    if (!input.files || !input.files[0]) return;
+    const dosya = input.files[0];
+    try {
+      const buffer = await dosya.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: 'array' });
+      const ilkSayfaAdi = wb.SheetNames[0];
+      const satirlar = XLSX.utils.sheet_to_json(wb.Sheets[ilkSayfaAdi], { defval: "" });
+
+      if (!satirlar || satirlar.length === 0) {
+        alert("SEÇİLEN EXCEL DOSYASINDA VERİ SATIRI BULUNAMADI!");
+        return;
       }
-      await exceleKaydet();
-      yerelHafizayaKaydet();
-      baglantiDurumunuGuncelle(dosyaTutucu.name);
-      adminListeleriniCiz();
-      gozlemciTablosunuCiz();
-      selectListeleriniDoldur();
+
+      const yeniTablo = [];
+      satirlar.forEach((r, i) => {
+        const { rutbe, kursNo, ad } = satirdanBilgileriCozumle(r);
+        if (!ad && !kursNo) return;
+
+        const faaliyetAdi = buyukHarfTr(sutunDegeriBul(r, ["FAALİYET ADI", "FAALİYET"]));
+        const birlik = buyukHarfTr(sutunDegeriBul(r, ["TABUR / BİRLİK", "BİRLİK", "TABUR", "BÖLÜK"]));
+        const yer = buyukHarfTr(sutunDegeriBul(r, ["ATIŞ YERİ", "POLİGON"]));
+        const silah = buyukHarfTr(sutunDegeriBul(r, ["SİLAH TÜRÜ", "SİLAH"]));
+        const tarih = sutunDegeriBul(r, ["TARİH", "ATIŞ TARİHİ"]);
+        const nezaretci = buyukHarfTr(sutunDegeriBul(r, ["NEZARETÇİ", "YOL NEZARETÇİSİ"]));
+        const hedefTuru = buyukHarfTr(sutunDegeriBul(r, ["HEDEF TÜRÜ"]));
+        const puan = sutunDegeriBul(r, ["PUAN", "PUAN / SONUÇ", "SONUÇ"]);
+        const yoklamaDurumu = buyukHarfTr(sutunDegeriBul(r, ["YOKLAMA DURUMU", "DURUM"]));
+
+        const kayitObj = {
+          id: Date.now() + i + Math.random(),
+          orijinalSira: i + 1,
+          rutbe: rutbe,
+          kursNo: kursNo || String(i + 1),
+          ad: ad || "İSİMSİZ KAYIT",
+          faaliyetAdi: faaliyetAdi || "",
+          birlik: birlik || "",
+          yer: yer || "",
+          silah: silah || "",
+          tarih: tarih || "",
+          nezaretci: nezaretci || "",
+          hedefTuru: hedefTuru || "",
+          puan: puan || "",
+          skor: 0,
+          yoklamaDurumu: yoklamaDurumu || "",
+          atilanMermi: 0,
+          hedefDetay: "-"
+        };
+        kayitObj.skor = puanSkoruCozumle(kayitObj);
+        yeniTablo.push(kayitObj);
+      });
+
+      if (yeniTablo.length === 0) {
+        alert("EXCEL DOSYASINDA GEÇERLİ 'KURS NO' VE 'ADI SOYADI' SÜTUNU BULUNAMADI!");
+        return;
+      }
+
+      excelTablosu = yeniTablo;
+      atisKuyrugu = [];
+      aktifYollar = [];
+      siraNumarasi = 1;
+      bitenSayisi = 0;
+      excelTablosunuDereceyeGoreSirala();
+      bagliExcelDosyaAdi = dosya.name;
+
+      document.getElementById('zorunluExcelPerdesi').style.display = 'none';
+
       personelTablosunuCiz();
       arsivTablosunuCiz();
+      ekranSayaclariniGuncelle();
+      baglantiDurumunuGuncelle(dosya.name);
     } catch (err) {
-      if (err.name !== 'AbortError') alert("EXCEL OKUNAMADI: " + err.message);
+      alert("EXCEL OKUMA HATASI: " + err.message);
+    } finally {
+      input.value = "";
     }
   }
 
-  async function exceleKaydet() {
-    yerelHafizayaKaydet();
-    if (!dosyaTutucu) return false;
+  function islenmisExcelWorkbookOlustur() {
+    excelTablosunuDereceyeGoreSirala();
+
+    const satirlar = excelTablosu.map((k, idx) => ({
+      "DERECE": idx + 1,
+      "RÜTBE": buyukHarfTr(k.rutbe || "ER"),
+      "KURS NO": String(k.kursNo),
+      "ADI SOYADI": buyukHarfTr(k.ad),
+      "FAALİYET ADI": buyukHarfTr(k.faaliyetAdi || aktifFaaliyet.adi || ""),
+      "TABUR / BİRLİK": buyukHarfTr(k.birlik || aktifFaaliyet.birlik || ""),
+      "ATIŞ YERİ": buyukHarfTr(k.yer || aktifFaaliyet.yer || ""),
+      "SİLAH TÜRÜ": buyukHarfTr(k.silah || aktifFaaliyet.silah || ""),
+      "TARİH": k.tarih || "",
+      "NEZARETÇİ": buyukHarfTr(k.nezaretci || ""),
+      "HEDEF TÜRÜ": buyukHarfTr(k.hedefTuru || ""),
+      "PUAN / SONUÇ": k.puan !== "" && k.puan !== null && k.puan !== undefined ? k.puan : "",
+      "YOKLAMA DURUMU": buyukHarfTr(k.yoklamaDurumu || "")
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(satirlar);
+
+    ws['!cols'] = [
+      { wch: 9 }, { wch: 12 }, { wch: 13 }, { wch: 25 }, { wch: 24 },
+      { wch: 24 }, { wch: 22 }, { wch: 14 }, { wch: 18 }, { wch: 24 },
+      { wch: 16 }, { wch: 16 }, { wch: 18 }
+    ];
 
     const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Islenmis_Atis_Sonuclari");
+    return wb;
+  }
 
-    const wsBirlik = XLSX.utils.json_to_sheet(birlikListesi.map((b, i) => ({ "Sıra": i + 1, "Birlik Adı": buyukHarfTr(b) })));
-    wsBirlik['!cols'] = [{ wch: 6 }, { wch: 35 }];
-    XLSX.utils.book_append_sheet(wb, wsBirlik, "Birlikler");
+  function tabloVeDurumGuncelle() {
+    excelTablosunuDereceyeGoreSirala();
+    ekranSayaclariniGuncelle();
+    personelTablosunuCiz();
+    arsivTablosunuCiz();
+  }
 
-    const wsYer = XLSX.utils.json_to_sheet(atisYeriListesi.map((y, i) => ({ "Sıra": i + 1, "Atış Yeri": buyukHarfTr(y) })));
-    wsYer['!cols'] = [{ wch: 6 }, { wch: 35 }];
-    XLSX.utils.book_append_sheet(wb, wsYer, "Atis_Yerleri");
-
-    const wsGozlemci = XLSX.utils.json_to_sheet(gozlemciListesi.map((g, i) => ({
-      "Sıra": i + 1, "ID": g.id, "Rütbe": buyukHarfTr(g.rutbe), "Adı Soyadı": buyukHarfTr(g.ad), "Sicil No": String(g.sicil), "Kayıt Tarihi": g.kayitTarihi
-    })));
-    wsGozlemci['!cols'] = [{ wch: 6 }, { wch: 15 }, { wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 18 }];
-    XLSX.utils.book_append_sheet(wb, wsGozlemci, "Gozlemciler");
-
-    const wsPersonel = XLSX.utils.json_to_sheet(personelListesi.map((p, i) => ({
-      "Sıra": i + 1, "ID": p.id, "Rütbe": buyukHarfTr(p.rutbe), "Adı Soyadı": buyukHarfTr(p.ad), "Sicil No": String(p.sicil), "Kayıt Tarihi": p.kayitTarihi
-    })));
-    wsPersonel['!cols'] = [{ wch: 6 }, { wch: 15 }, { wch: 12 }, { wch: 24 }, { wch: 16 }, { wch: 18 }];
-    XLSX.utils.book_append_sheet(wb, wsPersonel, "Personel");
-
-    const wsAtis = XLSX.utils.json_to_sheet(atisArsivi.map((a, i) => ({
-      "Kayıt No": i + 1, "Faaliyet No": buyukHarfTr(a.faaliyetKod), "Faaliyet Adı": buyukHarfTr(a.faaliyetAdi), "Atış Tarihi": a.tarih,
-      "Sıra No": a.sira, "Yol No": a.yol, "Rütbe": buyukHarfTr(a.rutbe), "Adı Soyadı": buyukHarfTr(a.ad), "Sicil No": String(a.sicil),
-      "Gözlemci": buyukHarfTr(a.gozlemci), "Atılan Fişek": a.atilanMermi, "İsabet": a.isabet, "100 Üzerinden Puan": a.puan100, "Katılım Durumu": buyukHarfTr(a.durum)
-    })));
-    wsAtis['!cols'] = [{ wch: 9 }, { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 22 }, { wch: 15 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 18 }, { wch: 16 }];
-    XLSX.utils.book_append_sheet(wb, wsAtis, "Atis_Kayitlari");
-
-    const toplamSarf = atisArsivi.reduce((t, a) => t + (a.durum === 'HAZIR' ? a.atilanMermi : 0), 0);
-    const toplamIsabet = atisArsivi.reduce((t, a) => t + a.isabet, 0);
-    const wsOzet = XLSX.utils.json_to_sheet([
-      { "Bilgi": "SON FAALİYET", "Değer": buyukHarfTr(`${aktifFaaliyet.kod} - ${aktifFaaliyet.adi}`) },
-      { "Bilgi": "BİRLİK / POLİGON", "Değer": buyukHarfTr(`${aktifFaaliyet.birlik} / ${aktifFaaliyet.yer}`) },
-      { "Bilgi": "ATIŞ SORUMLUSU", "Değer": buyukHarfTr(aktifFaaliyet.sorumlu) },
-      { "Bilgi": "TOPLAM SARF EDİLEN MÜHİMMAT", "Değer": toplamSarf + " ADET" },
-      { "Bilgi": "TOPLAM İSABET", "Değer": toplamIsabet + " İSABET" },
-      { "Bilgi": "GÜNCELLEME ZAMANI", "Değer": cihazSaatiniAl() }
-    ]);
-    wsOzet['!cols'] = [{ wch: 30 }, { wch: 35 }];
-    XLSX.utils.book_append_sheet(wb, wsOzet, "Muhimmat_ve_Ozet");
-
-    const buffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const writable = await dosyaTutucu.createWritable();
-    await writable.write(buffer);
-    await writable.close();
-    return true;
+  function islenmisExcelIndir() {
+    if (excelTablosu.length === 0) {
+      alert("İNDİRİLECEK EXCEL VERİSİ YOK! ÖNCE BİR EXCEL DOSYASI BAĞLAYIN.");
+      return;
+    }
+    const wb = islenmisExcelWorkbookOlustur();
+    const temelAd = bagliExcelDosyaAdi ? bagliExcelDosyaAdi.replace(/\.xlsx?$/i, '') : "ATIS_LISTESI";
+    const yeniDosyaAdi = `${temelAd}_ISLENMIS_YENI_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, yeniDosyaAdi);
+    baglantiDurumunuGuncelle(yeniDosyaAdi);
   }
 
   function baglantiDurumunuGuncelle(dosyaAdi) {
-    const bar = document.getElementById('excelDurumBar');
-    bar.classList.remove('alert-secondary');
-    bar.classList.add('alert-dark');
-    document.getElementById('bagliDosyaAdi').innerHTML = `<i class="bi bi-check-circle-fill"></i> BAĞLI EXCEL VERİTABANI: ${buyukHarfTr(dosyaAdi)}`;
-    document.getElementById('bagliDosyaAciklama').innerText = "TÜM KAYITLAR DOĞRUDAN BU DOSYAYA BÜYÜK HARFLE YAZILIYOR.";
+    const kutu = document.getElementById('excelBagliKutusu');
+    const adEl = document.getElementById('solMenuDosyaAdi');
+    const adminDetay = document.getElementById('adminBagliDosyaDetay');
+
+    if (dosyaAdi) {
+      kutu.style.display = 'flex';
+      adEl.innerText = buyukHarfTr(dosyaAdi);
+      if (adminDetay) {
+        adminDetay.innerHTML = `<span class="text-success fw-bold">● BAĞLI DOSYA: ${buyukHarfTr(dosyaAdi)}</span> (${excelTablosu.length} KAYIT • ORİJİNAL DOSYA KORUNUYOR)`;
+      }
+    }
   }
 
 
   // =========================================================================
-  // 3. SEKME GEÇİŞLERİ VE GERİ DÖNME GEÇMİŞİ
+  // 4. SEKME GEÇİŞLERİ VE GERİ DÖNME GEÇMİŞİ
   // =========================================================================
   function sekmeAc(sekmeAdi, btnElement, gecmiseEkle = true) {
     if (gecmiseEkle && aktifSekmeAdi && aktifSekmeAdi !== sekmeAdi) {
@@ -1244,11 +1538,20 @@
     const hedefBtn = btnElement || document.querySelector(`[data-sekme=${sekmeAdi}]`);
     if (hedefBtn) hedefBtn.classList.add('active');
 
-    if (sekmeAdi === 'atis') selectListeleriniDoldur();
+    if (sekmeAdi === 'atis') {
+      selectListeleriniDoldur();
+      hedefTuruArayuzGuncelle();
+      if (document.getElementById('atis-adim-2').style.display === 'block') {
+        yolNezaretciAtamaCiz();
+      }
+    }
     if (sekmeAdi === 'personel') personelTablosunuCiz();
-    if (sekmeAdi === 'gozlemciler') gozlemciTablosunuCiz();
+    if (sekmeAdi === 'nezaretciler') nezaretciTablosunuCiz();
     if (sekmeAdi === 'arsiv') arsivTablosunuCiz();
-    if (sekmeAdi === 'admin') adminListeleriniCiz();
+    if (sekmeAdi === 'admin') {
+      adminListeleriniCiz();
+      ekranSayaclariniGuncelle();
+    }
   }
 
   function oncekiSayfayaDon() {
@@ -1262,56 +1565,42 @@
 
 
   // =========================================================================
-  // 4. ADMİN PANELİ: BİRLİK VE ATIŞ YERİ YÖNETİMİ
+  // 5. ADMİN PANELİ: BİRLİK VE ATIŞ YERİ YÖNETİMİ (KALICI HAFIZA)
   // =========================================================================
-  document.getElementById('birlikFormu').addEventListener('submit', async function(e) {
+  document.getElementById('birlikFormu').addEventListener('submit', function(e) {
     e.preventDefault();
     const val = buyukHarfTr(document.getElementById('yeniBirlikInput').value.trim());
-    if (!val) {
-      alert("BİRLİK ADI BOŞ BIRAKILAMAZ (NOT NULL)!");
-      return;
-    }
-    if (birlikListesi.includes(val)) {
-      alert("BU BİRLİK ZATEN KAYITLI!");
-      return;
-    }
+    if (!val) return alert("TABUR / BİRLİK ADI BOŞ BIRAKILAMAZ!");
+    if (birlikListesi.includes(val)) return alert("BU TABUR / BİRLİK ZATEN EKLİ!");
     birlikListesi.push(val);
     document.getElementById('yeniBirlikInput').value = "";
-    await exceleKaydet();
+    kaliciVerileriKaydet();
     adminListeleriniCiz();
     selectListeleriniDoldur();
   });
 
-  async function birlikSil(index) {
-    if (!confirm("BU BİRLİK KAYDI SİLİNSİN Mİ?")) return;
+  function birlikSil(index) {
     birlikListesi.splice(index, 1);
-    await exceleKaydet();
+    kaliciVerileriKaydet();
     adminListeleriniCiz();
     selectListeleriniDoldur();
   }
 
-  document.getElementById('atisYeriFormu').addEventListener('submit', async function(e) {
+  document.getElementById('atisYeriFormu').addEventListener('submit', function(e) {
     e.preventDefault();
     const val = buyukHarfTr(document.getElementById('yeniAtisYeriInput').value.trim());
-    if (!val) {
-      alert("ATIŞ YERİ / POLİGON ADI BOŞ BIRAKILAMAZ (NOT NULL)!");
-      return;
-    }
-    if (atisYeriListesi.includes(val)) {
-      alert("BU ATIŞ YERİ ZATEN KAYITLI!");
-      return;
-    }
+    if (!val) return alert("ATIŞ YERİ / POLİGON ADI BOŞ BIRAKILAMAZ!");
+    if (atisYeriListesi.includes(val)) return alert("BU ATIŞ YERİ ZATEN EKLİ!");
     atisYeriListesi.push(val);
     document.getElementById('yeniAtisYeriInput').value = "";
-    await exceleKaydet();
+    kaliciVerileriKaydet();
     adminListeleriniCiz();
     selectListeleriniDoldur();
   });
 
-  async function atisYeriSil(index) {
-    if (!confirm("BU ATIŞ YERİ KAYDI SİLİNSİN Mİ?")) return;
+  function atisYeriSil(index) {
     atisYeriListesi.splice(index, 1);
-    await exceleKaydet();
+    kaliciVerileriKaydet();
     adminListeleriniCiz();
     selectListeleriniDoldur();
   }
@@ -1319,7 +1608,7 @@
   function adminListeleriniCiz() {
     const bTbody = document.getElementById('birlikTabloGovde');
     bTbody.innerHTML = birlikListesi.length === 0
-      ? `<tr><td colspan="3" class="text-center py-3 text-muted">HENÜZ BİRLİK KAYDI YOK.</td></tr>`
+      ? `<tr><td colspan="3" class="text-center py-3 text-muted">HENÜZ TABUR / BİRLİK EKLENMEDİ.</td></tr>`
       : birlikListesi.map((b, i) => `
         <tr>
           <td>${i + 1}</td>
@@ -1329,7 +1618,7 @@
 
     const yTbody = document.getElementById('atisYeriTabloGovde');
     yTbody.innerHTML = atisYeriListesi.length === 0
-      ? `<tr><td colspan="3" class="text-center py-3 text-muted">HENÜZ ATIŞ YERİ KAYDI YOK.</td></tr>`
+      ? `<tr><td colspan="3" class="text-center py-3 text-muted">HENÜZ ATIŞ YERİ EKLENMEDİ.</td></tr>`
       : atisYeriListesi.map((y, i) => `
         <tr>
           <td>${i + 1}</td>
@@ -1341,13 +1630,12 @@
   function selectListeleriniDoldur() {
     const selBirlik = document.getElementById('fBirlikSelect');
     const selYer = document.getElementById('fYerSelect');
-    const selAtisSorumlu = document.getElementById('fSorumluSelect');
 
     if (selBirlik) {
       const mevcutB = selBirlik.value || aktifFaaliyet.birlik;
       selBirlik.innerHTML = birlikListesi.length === 0
         ? `<option value="">-- ADMİN SAYFASINDAN BİRLİK EKLEYİN --</option>`
-        : `<option value="">-- BİRLİK SEÇİNİZ --</option>` + birlikListesi.map(b => `<option value="${buyukHarfTr(b)}">${buyukHarfTr(b)}</option>`).join('');
+        : `<option value="">-- TABUR / BİRLİK SEÇİNİZ --</option>` + birlikListesi.map(b => `<option value="${buyukHarfTr(b)}">${buyukHarfTr(b)}</option>`).join('');
       if (mevcutB && birlikListesi.includes(mevcutB)) selBirlik.value = mevcutB;
     }
 
@@ -1358,28 +1646,14 @@
         : `<option value="">-- ATIŞ YERİ SEÇİNİZ --</option>` + atisYeriListesi.map(y => `<option value="${buyukHarfTr(y)}">${buyukHarfTr(y)}</option>`).join('');
       if (mevcutY && atisYeriListesi.includes(mevcutY)) selYer.value = mevcutY;
     }
-
-    if (selAtisSorumlu) {
-      const mevcutS = selAtisSorumlu.value || aktifFaaliyet.sorumlu;
-      if (gozlemciListesi.length === 0) {
-        selAtisSorumlu.innerHTML = `<option value="">-- ÖNCE GÖZLEMCİLER SEKMESİNDEN EKLEYİN --</option>`;
-      } else {
-        selAtisSorumlu.innerHTML = `<option value="">-- KAYITLI GÖZLEMCİ SEÇİNİZ --</option>` +
-          gozlemciListesi.map(g => {
-            const val = buyukHarfTr(`${g.rutbe} ${g.ad} (${g.sicil})`);
-            return `<option value="${val}">${val}</option>`;
-          }).join('');
-        if (mevcutS) selAtisSorumlu.value = mevcutS;
-      }
-    }
   }
 
 
   // =========================================================================
-  // 5. YENİ ATIŞ SİHİRBAZI (ADIM 1 -> ADIM 2 -> ADIM 3 -> YOKLAMA & ATIŞ)
+  // 6. YENİ ATIŞ PLANLAMA (10 YOL VARSAYILAN, BLOK NEZARETÇİ DAĞITIMI)
   // =========================================================================
   function yeniFaaliyetSihirbaziAc() {
-    document.getElementById('yeniFaaliyetKodu').innerText = `ATS-2026-${String(atisArsivi.length + 1).padStart(4, '0')}`;
+    document.getElementById('yeniFaaliyetKodu').innerText = `ATS-2026-0001`;
     sekmeAc('atis', document.querySelector('[data-sekme=atis]'));
     atisAdimGec(1);
   }
@@ -1389,37 +1663,57 @@
     btn.classList.add('aktif');
   }
 
+  function hedefTuruDegisti(tur, btn) {
+    secenekSec('grpHedef', btn);
+    aktifFaaliyet.hedefTuru = buyukHarfTr(tur);
+    hedefTuruArayuzGuncelle();
+  }
+
+  function hedefTuruArayuzGuncelle() {
+    const sabitMi = aktifFaaliyet.hedefTuru === "SABİT HEDEF";
+    const bilgiKutusu = document.getElementById('hedefTuruBilgiKutusu');
+    const hedefSayisiKutusu = document.getElementById('yoldakiHedefSayisiKutusu');
+
+    if (sabitMi) {
+      hedefSayisiKutusu.style.display = "block";
+      bilgiKutusu.innerHTML = `<strong>SABİT HEDEF:</strong> Puan hesaplanmaz. Sadece her hedefteki vuruş sayısı (<code>+</code> / <code>-</code>) ve toplam isabet adedi kaydedilir.`;
+    } else {
+      hedefSayisiKutusu.style.display = "none";
+      bilgiKutusu.innerHTML = `<strong>PUANLI HEDEF:</strong> Atış bittikten sonra puan kutusuna dokunduğunuzda cihaz klavyesi açılır ve <b>en fazla 100 puan</b> üzerinden not girilir.`;
+    }
+  }
+
   function atisAdimGec(adimNo) {
     if (adimNo === 2) {
       const seciliBirlik = document.getElementById('fBirlikSelect').value;
       const seciliYer = document.getElementById('fYerSelect').value;
-      const seciliSorumlu = document.getElementById('fSorumluSelect').value;
 
-      if (!seciliBirlik) {
-        alert("LÜTFEN BİRLİK SEÇİN! (LİSTE BOŞSA ADMİN SAYFASINDAN BİRLİK EKLEYİN)");
-        return;
-      }
-      if (!seciliYer) {
-        alert("LÜTFEN ATIŞ YERİ SEÇİN! (LİSTE BOŞSA ADMİN SAYFASINDAN ATIŞ YERİ EKLEYİN)");
-        return;
-      }
-      if (!seciliSorumlu) {
-        alert("LÜTFEN KAYITLI GÖZLEMCİLER ARASINDAN BİR ATIŞ SORUMLUSU / GÖZLEMCİ SEÇİN!");
-        return;
-      }
+      if (!seciliBirlik) return alert("LÜTFEN TABUR / BİRLİK SEÇİN!");
+      if (!seciliYer) return alert("LÜTFEN ATIŞ YERİ SEÇİN!");
 
       aktifFaaliyet.kod = buyukHarfTr(document.getElementById('yeniFaaliyetKodu').innerText);
       aktifFaaliyet.adi = buyukHarfTr(document.getElementById('fAdi').value.trim() || "ATIŞ EĞİTİMİ");
       aktifFaaliyet.birlik = buyukHarfTr(seciliBirlik);
       aktifFaaliyet.yer = buyukHarfTr(seciliYer);
-      aktifFaaliyet.sorumlu = buyukHarfTr(seciliSorumlu);
-      aktifFaaliyet.zaman = buyukHarfTr(document.querySelector('#grpZaman .aktif').innerText);
-      aktifFaaliyet.hedef = buyukHarfTr(document.querySelector('#grpHedef .aktif').innerText);
-      aktifFaaliyet.amac = buyukHarfTr(document.querySelector('#grpAmac .aktif').innerText);
-      aktifFaaliyet.mermi = Number(document.getElementById('fMermi').value) || 3;
-      aktifFaaliyet.yolSayisi = Math.min(10, Math.max(1, Number(document.getElementById('fYolSayisi').value) || 10));
+      aktifFaaliyet.silah = buyukHarfTr(document.querySelector('#grpSilah .aktif').innerText);
+      aktifFaaliyet.hedefTuru = buyukHarfTr(document.querySelector('#grpHedef .aktif').innerText);
+      aktifFaaliyet.mermi = Math.max(1, Number(document.getElementById('fMermi').value) || 5);
+      aktifFaaliyet.yolSayisi = Math.max(1, Number(document.getElementById('fYolSayisi').value) || 10);
+      aktifFaaliyet.hedefSayisi = Math.max(1, Number(document.getElementById('fHedefSayisi').value) || 2);
 
-      yolGozlemciAtamaCiz();
+      yollariBlokOlarakPaylastir();
+      yolNezaretciAtamaCiz();
+    }
+
+    if (adimNo === 3) {
+      const aktifYolListesi = aktifOlanYollariGetir();
+      if (aktifYolListesi.length === 0) {
+        return alert("EN AZ 1 ATIŞ YOLU AKTİF OLMALIDIR!");
+      }
+      if (nezaretciListesi.length === 0) {
+        return alert("EN AZ 1 NEZARETÇİ EKLENMİŞ OLMALIDIR!");
+      }
+      adim3PersonelListesiCiz();
     }
 
     [1, 2, 3, 4].forEach(n => document.getElementById('atis-adim-' + n).style.display = 'none');
@@ -1430,38 +1724,79 @@
       document.getElementById('fAdi').value = buyukHarfTr(aktifFaaliyet.adi);
       if (aktifFaaliyet.birlik) document.getElementById('fBirlikSelect').value = aktifFaaliyet.birlik;
       if (aktifFaaliyet.yer) document.getElementById('fYerSelect').value = aktifFaaliyet.yer;
-      if (aktifFaaliyet.sorumlu) document.getElementById('fSorumluSelect').value = aktifFaaliyet.sorumlu;
       document.getElementById('fMermi').value = aktifFaaliyet.mermi;
       document.getElementById('fYolSayisi').value = aktifFaaliyet.yolSayisi;
-    }
-
-    if (adimNo === 3) {
-      adim3PersonelListesiCiz();
+      document.getElementById('fHedefSayisi').value = aktifFaaliyet.hedefSayisi;
+      hedefTuruArayuzGuncelle();
     }
   }
 
-  function yolGozlemciAtamaCiz() {
-    const alan = document.getElementById('yolGozlemciAtamaAlani');
+  function yollariBlokOlarakPaylastir() {
+    const aktifYolNolar = [];
+    for (let y = 1; y <= aktifFaaliyet.yolSayisi; y++) {
+      if (!yolAyarlari[y]) {
+        yolAyarlari[y] = { yolNo: y, aktif: true, ad: `YOL ${y}`, nezaretci: "", manuelDegisti: false };
+      }
+      if (yolAyarlari[y].aktif) {
+        aktifYolNolar.push(y);
+      }
+    }
+
+    if (nezaretciListesi.length === 0 || aktifYolNolar.length === 0) return;
+
+    const toplamAktifYol = aktifYolNolar.length;
+    const nezaretciSayisi = nezaretciListesi.length;
+
+    aktifYolNolar.forEach((yolNo, idx) => {
+      if (yolAyarlari[yolNo].manuelDegisti) return;
+      const nezaretciIdx = Math.min(
+        nezaretciSayisi - 1,
+        Math.floor((idx * nezaretciSayisi) / toplamAktifYol)
+      );
+      const g = nezaretciListesi[nezaretciIdx];
+      yolAyarlari[yolNo].nezaretci = buyukHarfTr(`${g.rutbe} ${g.ad}`);
+    });
+  }
+
+  function yolNezaretciAtamaCiz() {
+    document.getElementById('adim2YolSayisiBaslik').innerText = aktifFaaliyet.yolSayisi;
+    const alan = document.getElementById('yolNezaretciAtamaAlani');
     alan.innerHTML = '';
 
+    yollariBlokOlarakPaylastir();
+
+    const gecerliNezaretciAdlari = nezaretciListesi.map(g => buyukHarfTr(`${g.rutbe} ${g.ad}`));
+
     for (let y = 1; y <= aktifFaaliyet.yolSayisi; y++) {
-      if (!yolGozlemcileri[y] && gozlemciListesi.length > 0) {
-        const g = gozlemciListesi[(y - 1) % gozlemciListesi.length];
-        yolGozlemcileri[y] = buyukHarfTr(`${g.rutbe} ${g.ad}`);
+      const ayar = yolAyarlari[y];
+
+      if (gecerliNezaretciAdlari.length > 0 && !gecerliNezaretciAdlari.includes(ayar.nezaretci)) {
+        ayar.manuelDegisti = false;
+        yollariBlokOlarakPaylastir();
       }
 
-      let secenekler = `<option value="ATANMADI">-- GÖZLEMCİ SEÇ --</option>`;
-      gozlemciListesi.forEach(g => {
-        const tamAd = buyukHarfTr(`${g.rutbe} ${g.ad}`);
-        const secili = yolGozlemcileri[y] === tamAd ? 'selected' : '';
-        secenekler += `<option value="${tamAd}" ${secili}>${tamAd}</option>`;
-      });
+      let secenekler = '';
+      if (nezaretciListesi.length === 0) {
+        secenekler = `<option value="">NEZARETÇİ EKLENMEDİ</option>`;
+      } else {
+        nezaretciListesi.forEach(g => {
+          const tamAd = buyukHarfTr(`${g.rutbe} ${g.ad}`);
+          const secili = ayar.nezaretci === tamAd ? 'selected' : '';
+          secenekler += `<option value="${tamAd}" ${secili}>${tamAd}</option>`;
+        });
+      }
 
       alan.innerHTML += `
         <div class="col">
-          <div class="border rounded p-2">
-            <span class="badge bg-dark mb-1">YOL ${y}</span>
-            <select class="form-select form-select-sm fw-bold" onchange="yolGozlemcileri[${y}] = this.value">
+          <div class="border rounded p-2 h-100 ${ayar.aktif ? 'bg-white' : 'bg-light opacity-50'}">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="badge bg-dark">YOL ${y}</span>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" ${ayar.aktif ? 'checked' : ''} onchange="yolAktiflikDegistir(${y}, this.checked)" title="Yolu Aç/Kapat">
+              </div>
+            </div>
+            <input type="text" class="form-control form-control-sm fw-bold mb-1" value="${buyukHarfTr(ayar.ad)}" onchange="yolAyarlari[${y}].ad = buyukHarfTr(this.value || 'YOL ${y}')" placeholder="YOL ADI">
+            <select class="form-select form-select-sm fw-bold" ${!ayar.aktif ? 'disabled' : ''} onchange="yolNezaretciManuelSec(${y}, this.value)">
               ${secenekler}
             </select>
           </div>
@@ -1469,37 +1804,63 @@
     }
   }
 
+  function yolNezaretciManuelSec(yolNo, secilenNezaretci) {
+    yolAyarlari[yolNo].nezaretci = buyukHarfTr(secilenNezaretci);
+    yolAyarlari[yolNo].manuelDegisti = true;
+  }
+
+  function yolAktiflikDegistir(yolNo, durum) {
+    yolAyarlari[yolNo].aktif = durum;
+    yolNezaretciAtamaCiz();
+  }
+
+  function aktifOlanYollariGetir() {
+    const liste = [];
+    for (let y = 1; y <= aktifFaaliyet.yolSayisi; y++) {
+      if (yolAyarlari[y] && yolAyarlari[y].aktif) {
+        liste.push({ yolNo: y, ad: buyukHarfTr(yolAyarlari[y].ad || `YOL ${y}`), nezaretci: buyukHarfTr(yolAyarlari[y].nezaretci || "-") });
+      }
+    }
+    return liste;
+  }
+
   function adim3PersonelListesiCiz() {
-    document.getElementById('adim3KisiSayisi').innerText = personelListesi.length;
+    document.getElementById('adim3KisiSayisi').innerText = excelTablosu.length;
     const tbody = document.getElementById('adim3PersonelTablo');
     tbody.innerHTML = '';
 
-    if (personelListesi.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">HENÜZ PERSONEL KAYDI YOK. ÖNCE PERSONEL SEKMESİNDEN ASKER EKLEYİN.</td></tr>`;
+    if (excelTablosu.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">EXCEL TABLOSUNDA ATICI YOK.</td></tr>`;
       return;
     }
 
-    personelListesi.forEach((p, idx) => {
-      const yolNo = (idx % aktifFaaliyet.yolSayisi) + 1;
-      const goz = buyukHarfTr(yolGozlemcileri[yolNo] || "ATANMADI");
+    const aktifYollarListesi = aktifOlanYollariGetir();
+    excelTablosu.forEach((p, idx) => {
+      const atananYol = aktifYollarListesi[idx % aktifYollarListesi.length];
       tbody.innerHTML += `
         <tr>
           <td class="fw-bold">${idx + 1}</td>
+          <td><span class="badge bg-secondary">${buyukHarfTr(p.rutbe || "ER")}</span></td>
+          <td>${String(p.kursNo)}</td>
           <td class="fw-bold">${buyukHarfTr(p.ad)}</td>
-          <td>${buyukHarfTr(p.rutbe)}</td>
-          <td>${String(p.sicil)}</td>
-          <td><span class="badge bg-secondary">YOL ${yolNo}</span></td>
-          <td>${goz}</td>
+          <td><span class="badge bg-dark">${atananYol.ad}</span></td>
+          <td>${atananYol.nezaretci}</td>
         </tr>`;
     });
   }
 
   function atisiBaslat() {
-    if (personelListesi.length === 0) return alert("ATIŞ BAŞLATMAK İÇİN EN AZ 1 PERSONEL KAYITLI OLMALIDIR!");
-    atisKuyrugu = personelListesi.map((p, idx) => ({
-      ...p,
-      atananGozlemci: buyukHarfTr(yolGozlemcileri[(idx % aktifFaaliyet.yolSayisi) + 1] || "ATANMADI")
-    }));
+    if (excelTablosu.length === 0) return alert("ATIŞ BAŞLATMAK İÇİN ÖNCE EXCEL DOSYASI BAĞLAMALISINIZ!");
+    const aktifYollarListesi = aktifOlanYollariGetir();
+    if (aktifYollarListesi.length === 0) return alert("EN AZ 1 AKTİF ATIŞ YOLU SEÇMELİSİNİZ!");
+
+    atisKuyrugu = excelTablosu.map((p, idx) => {
+      const atanan = aktifYollarListesi[idx % aktifYollarListesi.length];
+      return {
+        ...p,
+        atananNezaretci: atanan.nezaretci
+      };
+    });
     siraNumarasi = 1;
     bitenSayisi = 0;
     aktifFaaliyet.baslamaZamani = cihazSaatiniAl();
@@ -1510,56 +1871,82 @@
 
 
   // =========================================================================
-  // 6. YOKLAMA VE 10 YOL CANLI ATIŞ EKRANI
+  // 7. YOKLAMA VE CANLI ATIŞ EKRANI
   // =========================================================================
+  function yolToplamVurusHesapla(item) {
+    return (item.hedefVuruslari || []).reduce((t, v) => t + (Number(v) || 0), 0);
+  }
+
+  function yolHedefDetayMetni(item) {
+    return (item.hedefVuruslari || []).map((v, idx) => `H${idx + 1}:${v}`).join(' | ');
+  }
+
+  function geriAlButonuGuncelle() {
+    const btn = document.getElementById('btnYoklamaGeriAl');
+    if (!btn) return;
+    if (!atisBasladiMi && yoklamaGecmisYigini.length > 0) {
+      btn.style.display = "inline-block";
+      btn.innerHTML = `<i class="bi bi-arrow-counterclockwise me-1"></i> GERİ AL (${yoklamaGecmisYigini.length})`;
+    } else {
+      btn.style.display = "none";
+    }
+  }
+
   function siradakiGrubuYollaraYerlestir() {
-    const yolSayisi = aktifFaaliyet.yolSayisi;
+    const aktifYolListesi = aktifOlanYollariGetir();
+    const yolAdedi = aktifYolListesi.length;
+
     if (atisKuyrugu.length === 0) {
-      alert("TÜM PERSONELİN ATIŞI TAMAMLANDI! ARŞİV SEKMESİNDEN İMZA ATIP RAPOR ALABİLİRSİNİZ.");
-      yerelHafizayaKaydet();
-      sekmeAc('arsiv', document.querySelector('[data-sekme=arsiv]'));
+      tabloVeDurumGuncelle();
+      document.getElementById('bitisImzaOnayYazisi').style.display = kayitliImzaDataUrl ? 'block' : 'none';
+      new bootstrap.Modal(document.getElementById('atisBitisVeImzaModal')).show();
       return;
     }
 
     atisBasladiMi = false;
-    sonYoklamaYedek = null;
+    yoklamaGecmisYigini = [];
+    geriAlButonuGuncelle();
+
     document.getElementById('aktifSiraNo').innerText = siraNumarasi;
     document.getElementById('statBiten').innerText = bitenSayisi;
     document.getElementById('statToplam').innerText = bitenSayisi + atisKuyrugu.length;
-    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - yolSayisi);
+    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - yolAdedi);
 
     document.getElementById('rozetAsama1').className = "badge bg-dark";
     document.getElementById('rozetAsama2').className = "badge bg-secondary";
     document.getElementById('btnSirayiBaslat').style.display = "inline-block";
     document.getElementById('btnSirayiTamamla').style.display = "none";
-    document.getElementById('atisYonergeMetni').innerText = "HERKES HAZIR SAYILIR. GELMEYEN VARSA GELMEDİ'YE BASIN; YERİNE SIRADAKİ GELİR. SONRA SIRAYI BAŞLAT.";
+    document.getElementById('atisYonergeMetni').innerText = "HERKES HAZIR SAYILIR. YOKSA GELMEDİ DÜĞMESİNE BASIN; YERİNE SIRADAKİ ATICI OTOMATİK GELİR. SONRA SIRAYI BAŞLATIN.";
 
     aktifYollar = [];
-    for (let i = 0; i < yolSayisi; i++) {
+    for (let i = 0; i < yolAdedi; i++) {
+      const yolBilgi = aktifYolListesi[i];
       const kisi = atisKuyrugu[i] || null;
       aktifYollar.push({
-        yol: i + 1,
+        yol: yolBilgi.yolNo,
+        yolAdi: yolBilgi.ad,
         kisi: kisi,
-        gozlemci: kisi ? buyukHarfTr(yolGozlemcileri[i + 1] || kisi.atananGozlemci) : "",
-        isabet: null,
+        nezaretci: yolBilgi.nezaretci,
+        hedefVuruslari: new Array(aktifFaaliyet.hedefSayisi).fill(0),
+        puan: null,
+        vurusGirildiMi: false,
         not: "",
-        gecmis: [],
-        degisimBilgisi: null
+        gecmis: []
       });
     }
 
     siradakiGrupSeridiCiz();
     yolKartlariniCiz();
-    yerelHafizayaKaydet();
+    ekranSayaclariniGuncelle();
   }
 
   function siradakiGrupSeridiCiz() {
-    const yolSayisi = aktifFaaliyet.yolSayisi;
-    const bekleyenler = atisKuyrugu.slice(yolSayisi, yolSayisi + 10);
+    const yolAdedi = aktifYollar.length;
+    const bekleyenler = atisKuyrugu.slice(yolAdedi, yolAdedi + 10);
     const div = document.getElementById('siradakiGrupContainer');
 
     if (bekleyenler.length === 0) {
-      div.innerHTML = `<span class="text-muted">ARKADA BEKLEYEN BAŞKA GRUP YOK.</span>`;
+      div.innerHTML = `<span class="text-muted">ARKADA BEKLEYEN BAŞKA ATICI YOK.</span>`;
       return;
     }
 
@@ -1567,7 +1954,7 @@
     for (let c = 0; c < 5; c++) {
       const k1 = bekleyenler[c] ? `<b>${c + 1}</b> ${buyukHarfTr(bekleyenler[c].ad)}` : '';
       const k2 = bekleyenler[c + 5] ? `<b>${c + 6}</b> ${buyukHarfTr(bekleyenler[c + 5].ad)}` : '';
-      html += `<div class="col">${k1}<br>${k2}</div>`;
+      html += `<div class="col text-truncate">${k1}<br>${k2}</div>`;
     }
     div.innerHTML = html;
   }
@@ -1575,13 +1962,14 @@
   function yolKartlariniCiz() {
     const container = document.getElementById('yollarContainer');
     container.innerHTML = '';
+    const sabitHedefMi = aktifFaaliyet.hedefTuru === "SABİT HEDEF";
 
     aktifYollar.forEach((item, index) => {
       if (!item.kisi) {
         container.innerHTML += `
           <div class="col">
             <div class="yol-kart opacity-50 h-100">
-              <span class="yol-badge bg-secondary">YOL ${item.yol}</span>
+              <span class="yol-badge bg-secondary">${buyukHarfTr(item.yolAdi)}</span>
               <div class="text-center text-muted my-4">BOŞ YOL</div>
             </div>
           </div>`;
@@ -1593,108 +1981,230 @@
           <div class="col">
             <div class="yol-kart h-100 d-flex flex-column justify-content-between">
               <div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="yol-badge">YOL ${item.yol}</span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="yol-badge">${buyukHarfTr(item.yolAdi)}</span>
+                  <span class="badge bg-secondary">${buyukHarfTr(item.kisi.rutbe || "ER")}</span>
                 </div>
                 <div class="fw-bold text-truncate">${buyukHarfTr(item.kisi.ad)}</div>
-                <div class="text-muted small">${buyukHarfTr(item.kisi.rutbe)} &nbsp; ${String(item.kisi.sicil)}</div>
-                <div class="text-secondary small text-truncate fw-bold">GÖZLEMCİ: ${buyukHarfTr(item.gozlemci)}</div>
-                ${item.degisimBilgisi ? `<div class="text-dark small mt-1 fw-bold">${item.degisimBilgisi} <a href="#" class="text-secondary" onclick="yoklamaGeriAl(event)">GERİ AL</a></div>` : ''}
+                <div class="text-muted small">KURS NO: ${String(item.kisi.kursNo)}</div>
+                <div class="text-secondary small text-truncate fw-bold mt-1">NEZARETÇİ: ${buyukHarfTr(item.nezaretci)}</div>
               </div>
-              <div class="d-flex gap-1 mt-3">
-                <button onclick="yoldaGelmedi(${index}, 'GELMEDİ')" class="btn btn-outline-dark btn-sm w-100 fw-bold">GELMEDİ</button>
-                <button onclick="yoldaGelmedi(${index}, 'RAPORLU / İZİNLİ')" class="btn btn-light border btn-sm w-100">DURUM</button>
+              <div class="mt-3">
+                <button onclick="yoldanKaldir(${index})" class="btn btn-outline-dark btn-sm w-100 fw-bold py-2">
+                  <i class="bi bi-person-x me-1"></i> GELMEDİ
+                </button>
               </div>
             </div>
           </div>`;
         return;
       }
 
-      const kayitliMi = item.isabet !== null;
-      const gosterilenSkor = kayitliMi ? item.isabet : '—';
-
-      container.innerHTML += `
-        <div class="col">
-          <div class="yol-kart">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="yol-badge">YOL ${item.yol}</span>
-              <button onclick="duzeltModalAc(${index})" class="btn btn-light border btn-sm py-0 px-2 fw-bold">DÜZELT</button>
+      if (sabitHedefMi) {
+        const toplamVurus = yolToplamVurusHesapla(item);
+        const hedeflerHtml = item.hedefVuruslari.map((vurus, hIdx) => `
+          <div class="hedef-sayac-satir ${vurus > 0 ? 'aktif-vurus' : ''}">
+            <div class="text-start">
+              <div class="fw-bold" style="font-size:12px;">${hIdx + 1}. HEDEF</div>
             </div>
-            <div class="fw-bold text-truncate">${buyukHarfTr(item.kisi.ad)}</div>
-            <div class="text-muted small">${buyukHarfTr(item.kisi.rutbe)} &nbsp; ${String(item.kisi.sicil)}</div>
-            <div class="text-secondary small text-truncate fw-bold">GÖZLEMCİ: ${buyukHarfTr(item.gozlemci)}</div>
-
-            <div onclick="isabetArtir(${index})" class="skor-kutusu ${kayitliMi ? 'kaydedildi' : ''}">
-              <div>
-                <span class="skor-rakam">${gosterilenSkor}</span>
-                <span class="skor-toplam">/ ${aktifFaaliyet.mermi}</span>
-              </div>
-              <div class="small fw-bold ${kayitliMi ? 'text-dark' : 'text-muted'}">
-                ${kayitliMi ? 'KAYDEDİLDİ' : 'İSABET SAYISI'}
-              </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" onclick="hedefVurusDegistir(${index}, ${hIdx}, -1)" class="btn btn-outline-dark btn-sayac">-</button>
+              <span class="fw-bold fs-5 px-1" style="min-width:24px; text-align:center;">${vurus}</span>
+              <button type="button" onclick="hedefVurusDegistir(${index}, ${hIdx}, 1)" class="btn btn-dark btn-sayac">+</button>
             </div>
           </div>
-        </div>`;
+        `).join('');
+
+        container.innerHTML += `
+          <div class="col">
+            <div class="yol-kart h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="yol-badge">${buyukHarfTr(item.yolAdi)}</span>
+                  <button onclick="duzeltModalAc(${index})" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:11px;">NOT</button>
+                </div>
+                <div class="fw-bold text-truncate">${buyukHarfTr(item.kisi.rutbe || "ER")} ${buyukHarfTr(item.kisi.ad)}</div>
+                <div class="text-muted small">KURS NO: ${String(item.kisi.kursNo)}</div>
+                <div class="text-secondary small text-truncate fw-bold mb-2">NEZARETÇİ: ${buyukHarfTr(item.nezaretci)}</div>
+
+                ${hedeflerHtml}
+              </div>
+
+              <div class="border-top mt-2 pt-2 d-flex justify-content-between align-items-center">
+                <span class="small text-muted fw-bold">TOPLAM VURUŞ:</span>
+                <span class="badge bg-dark fs-6">${toplamVurus} / ${aktifFaaliyet.mermi} VURUŞ</span>
+              </div>
+            </div>
+          </div>`;
+      } else {
+        const girilenPuan = item.puan !== null && item.puan !== undefined ? item.puan : "";
+        container.innerHTML += `
+          <div class="col">
+            <div class="yol-kart h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="yol-badge">${buyukHarfTr(item.yolAdi)}</span>
+                  <button onclick="duzeltModalAc(${index})" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:11px;">NOT</button>
+                </div>
+                <div class="fw-bold text-truncate">${buyukHarfTr(item.kisi.rutbe || "ER")} ${buyukHarfTr(item.kisi.ad)}</div>
+                <div class="text-muted small">KURS NO: ${String(item.kisi.kursNo)}</div>
+                <div class="text-secondary small text-truncate fw-bold mb-2">NEZARETÇİ: ${buyukHarfTr(item.nezaretci)}</div>
+
+                <div class="puan-numpad-kutu ${girilenPuan !== "" ? 'girildi' : ''}" id="puanKutu_${index}">
+                  <label for="puanInput_${index}" class="small text-muted d-block fw-bold mb-1" style="font-size:11px; cursor:pointer;">PUAN YAZIN (MAX 100)</label>
+                  <input type="text" id="puanInput_${index}" inputmode="numeric" pattern="[0-9]*"
+                    class="form-control puan-numpad-input"
+                    value="${girilenPuan}"
+                    placeholder="0"
+                    oninput="dogrudanPuanYazildi(${index}, this)">
+                </div>
+              </div>
+
+              <div class="border-top mt-2 pt-2 d-flex justify-content-between align-items-center small">
+                <span class="text-muted">FİŞEK: <b>${aktifFaaliyet.mermi} ADET</b></span>
+                <span class="fw-bold" id="puanDurum_${index}">${girilenPuan !== "" ? `${girilenPuan} / 100 PUAN` : 'BEKLİYOR'}</span>
+              </div>
+            </div>
+          </div>`;
+      }
     });
   }
 
-  function yoldaGelmedi(yolIndex, sebep) {
-    sonYoklamaYedek = JSON.parse(JSON.stringify({ atisKuyrugu, aktifYollar }));
-    const gelenKisi = aktifYollar[yolIndex].kisi;
+  function dogrudanPuanYazildi(yolIndex, inputEl) {
+    const item = aktifYollar[yolIndex];
+    let rakamlar = inputEl.value.replace(/\D/g, '');
+    const kutu = document.getElementById(`puanKutu_${yolIndex}`);
+    const durumEl = document.getElementById(`puanDurum_${yolIndex}`);
 
-    atisArsivi.unshift({
-      faaliyetKod: buyukHarfTr(aktifFaaliyet.kod),
+    if (rakamlar.length >= 3) {
+      if (rakamlar === "100") {
+        rakamlar = "100";
+      } else {
+        rakamlar = rakamlar.slice(0, 2);
+      }
+    }
+
+    inputEl.value = rakamlar;
+
+    if (rakamlar === "") {
+      item.puan = null;
+      item.vurusGirildiMi = false;
+      if (kutu) kutu.classList.remove('girildi');
+      if (durumEl) durumEl.innerText = "BEKLİYOR";
+    } else {
+      const sayi = Number(rakamlar);
+      item.puan = sayi;
+      item.vurusGirildiMi = true;
+      if (kutu) kutu.classList.add('girildi');
+      if (durumEl) durumEl.innerText = `${sayi} / 100 PUAN`;
+    }
+  }
+
+  function hedefVurusDegistir(yolIndex, hedefIndex, degisim) {
+    const item = aktifYollar[yolIndex];
+    const mevcutVurus = Number(item.hedefVuruslari[hedefIndex]) || 0;
+    const toplamVurus = yolToplamVurusHesapla(item);
+
+    if (degisim > 0) {
+      if (toplamVurus >= aktifFaaliyet.mermi) {
+        alert(`BU ATICI EN FAZLA ${aktifFaaliyet.mermi} FİŞEK ATABİLİR!`);
+        return;
+      }
+      item.hedefVuruslari[hedefIndex] = mevcutVurus + 1;
+      item.vurusGirildiMi = true;
+      item.gecmis.unshift(`${cihazSaatiniAl()} ${hedefIndex + 1}. HEDEF: ${mevcutVurus} → ${item.hedefVuruslari[hedefIndex]}`);
+    } else if (degisim < 0) {
+      if (mevcutVurus <= 0) return;
+      item.hedefVuruslari[hedefIndex] = mevcutVurus - 1;
+      item.gecmis.unshift(`${cihazSaatiniAl()} ${hedefIndex + 1}. HEDEF: ${mevcutVurus} → ${item.hedefVuruslari[hedefIndex]}`);
+    }
+
+    yolKartlariniCiz();
+  }
+
+
+  // =========================================================================
+  // 8. YOKLAMA: GELMEDİ VE ÇOKLU GERİ AL BUTONU
+  // =========================================================================
+  function excelSatiriniGuncelle(kisiId, guncellemeObjesi) {
+    const idx = excelTablosu.findIndex(k => String(k.id) === String(kisiId));
+    if (idx !== -1) {
+      excelTablosu[idx] = { ...excelTablosu[idx], ...guncellemeObjesi };
+    }
+  }
+
+  function yoldanKaldir(yolIndex) {
+    const kaldirilanKisi = aktifYollar[yolIndex].kisi;
+    if (!kaldirilanKisi) return;
+
+    const oncekiExcelSatir = JSON.parse(JSON.stringify(excelTablosu.find(k => String(k.id) === String(kaldirilanKisi.id)) || {}));
+
+    yoklamaGecmisYigini.push(JSON.parse(JSON.stringify({
+      atisKuyrugu,
+      aktifYollar,
+      oncekiExcelSatir
+    })));
+
+    const tarihSaat = cihazSaatiniAl();
+    const nezaretciAdi = buyukHarfTr(aktifYollar[yolIndex].nezaretci);
+    const hedefTuruAdi = buyukHarfTr(aktifFaaliyet.hedefTuru);
+
+    excelSatiriniGuncelle(kaldirilanKisi.id, {
       faaliyetAdi: buyukHarfTr(aktifFaaliyet.adi),
-      tarih: cihazSaatiniAl(),
-      sira: siraNumarasi,
-      yol: aktifYollar[yolIndex].yol,
-      rutbe: buyukHarfTr(gelenKisi.rutbe),
-      ad: buyukHarfTr(gelenKisi.ad),
-      sicil: String(gelenKisi.sicil),
-      gozlemci: buyukHarfTr(aktifYollar[yolIndex].gozlemci),
+      birlik: buyukHarfTr(aktifFaaliyet.birlik),
+      yer: buyukHarfTr(aktifFaaliyet.yer),
+      silah: buyukHarfTr(aktifFaaliyet.silah),
+      tarih: tarihSaat,
+      nezaretci: nezaretciAdi,
+      hedefTuru: hedefTuruAdi,
+      puan: 0,
+      skor: 0,
       atilanMermi: 0,
-      isabet: 0,
-      puan100: 0,
-      durum: buyukHarfTr(sebep),
-      gecmis: []
+      hedefDetay: "-",
+      yoklamaDurumu: "GELMEDİ"
     });
 
-    atisKuyrugu = atisKuyrugu.filter(k => k.id !== gelenKisi.id);
+    atisKuyrugu = atisKuyrugu.filter(k => String(k.id) !== String(kaldirilanKisi.id));
 
-    const yolSayisi = aktifFaaliyet.yolSayisi;
-    const yedekKisi = atisKuyrugu[yolSayisi - 1] || null;
+    const yolAdedi = aktifYollar.length;
+    const yedekKisi = atisKuyrugu[yolAdedi - 1] || null;
     aktifYollar[yolIndex].kisi = yedekKisi;
-    aktifYollar[yolIndex].degisimBilgisi = `${buyukHarfTr(sebep)}: ${buyukHarfTr(gelenKisi.ad.split(' ')[0])}...`;
 
-    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - yolSayisi);
+    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - yolAdedi);
+    geriAlButonuGuncelle();
     siradakiGrupSeridiCiz();
     yolKartlariniCiz();
-    exceleKaydet();
+    tabloVeDurumGuncelle();
   }
 
-  function yoklamaGeriAl(e) {
-    e.preventDefault();
-    if (!sonYoklamaYedek) return;
-    atisKuyrugu = sonYoklamaYedek.atisKuyrugu;
-    aktifYollar = sonYoklamaYedek.aktifYollar;
-    atisArsivi.shift();
-    sonYoklamaYedek = null;
+  function yoklamaGeriAl() {
+    if (yoklamaGecmisYigini.length === 0) return;
+
+    const sonDurum = yoklamaGecmisYigini.pop();
+    atisKuyrugu = sonDurum.atisKuyrugu;
+    aktifYollar = sonDurum.aktifYollar;
+
+    if (sonDurum.oncekiExcelSatir && sonDurum.oncekiExcelSatir.id) {
+      excelSatiriniGuncelle(sonDurum.oncekiExcelSatir.id, sonDurum.oncekiExcelSatir);
+    }
+
+    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - aktifYollar.length);
+    geriAlButonuGuncelle();
     siradakiGrupSeridiCiz();
     yolKartlariniCiz();
-    exceleKaydet();
+    tabloVeDurumGuncelle();
   }
 
   function siradakiGrupModalAc() {
-    const yolSayisi = aktifFaaliyet.yolSayisi;
-    const bekleyenler = atisKuyrugu.slice(yolSayisi, yolSayisi + 10);
+    const yolAdedi = aktifYollar.length;
+    const bekleyenler = atisKuyrugu.slice(yolAdedi, yolAdedi + 10);
     const icerik = document.getElementById('siradakiGrupModalIcerik');
 
     if (bekleyenler.length === 0) {
-      icerik.innerHTML = `<p class="text-muted">SIRADAKİ GRUPTA BEKLEYEN PERSONEL YOK.</p>`;
+      icerik.innerHTML = `<p class="text-muted">SIRADAKİ GRUPTA BEKLEYEN ATICI YOK.</p>`;
     } else {
       icerik.innerHTML = bekleyenler.map((k, i) => `
-        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-          <div><span class="badge bg-dark me-2">YOL ${i + 1}</span> <b>${buyukHarfTr(k.ad)}</b> <small class="text-muted">(${buyukHarfTr(k.rutbe)} • ${String(k.sicil)})</small></div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom py-2 gap-2">
+          <div><span class="badge bg-dark me-2">SIRA ${i + 1}</span> <b>${buyukHarfTr(k.rutbe || "ER")} ${buyukHarfTr(k.ad)}</b> <small class="text-muted">(KURS NO: ${String(k.kursNo)})</small></div>
           <div class="d-flex gap-1">
             <button onclick="siradakiGruptanCikar('${k.id}', 'GELMEDİ')" class="btn btn-outline-dark btn-sm">GELMEDİ</button>
             <button onclick="siradakiGruptanCikar('${k.id}', 'RAPORLU')" class="btn btn-outline-secondary btn-sm">RAPORLU</button>
@@ -1709,52 +2219,65 @@
     const kisi = atisKuyrugu.find(k => String(k.id) === String(kisiId));
     if (!kisi) return;
 
-    atisArsivi.unshift({
-      faaliyetKod: buyukHarfTr(aktifFaaliyet.kod), faaliyetAdi: buyukHarfTr(aktifFaaliyet.adi), tarih: cihazSaatiniAl(),
-      sira: siraNumarasi + 1, yol: "-", rutbe: buyukHarfTr(kisi.rutbe), ad: buyukHarfTr(kisi.ad), sicil: String(kisi.sicil),
-      gozlemci: "-", atilanMermi: 0, isabet: 0, puan100: 0, durum: buyukHarfTr(sebep), gecmis: []
+    const oncekiExcelSatir = JSON.parse(JSON.stringify(excelTablosu.find(k => String(k.id) === String(kisi.id)) || {}));
+
+    yoklamaGecmisYigini.push(JSON.parse(JSON.stringify({
+      atisKuyrugu,
+      aktifYollar,
+      oncekiExcelSatir
+    })));
+
+    const tarihSaat = cihazSaatiniAl();
+    const hedefTuruAdi = buyukHarfTr(aktifFaaliyet.hedefTuru);
+
+    excelSatiriniGuncelle(kisi.id, {
+      faaliyetAdi: buyukHarfTr(aktifFaaliyet.adi),
+      birlik: buyukHarfTr(aktifFaaliyet.birlik),
+      yer: buyukHarfTr(aktifFaaliyet.yer),
+      silah: buyukHarfTr(aktifFaaliyet.silah),
+      tarih: tarihSaat,
+      nezaretci: "-",
+      hedefTuru: hedefTuruAdi,
+      puan: 0,
+      skor: 0,
+      atilanMermi: 0,
+      hedefDetay: "-",
+      yoklamaDurumu: buyukHarfTr(sebep)
     });
 
     atisKuyrugu = atisKuyrugu.filter(k => String(k.id) !== String(kisiId));
-    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - aktifFaaliyet.yolSayisi);
+    document.getElementById('statBekleyen').innerText = Math.max(0, atisKuyrugu.length - aktifYollar.length);
+    geriAlButonuGuncelle();
     siradakiGrupSeridiCiz();
     siradakiGrupModalAc();
-    exceleKaydet();
+    tabloVeDurumGuncelle();
   }
 
   function sirayiBaslat() {
     atisBasladiMi = true;
+    yoklamaGecmisYigini = [];
+    geriAlButonuGuncelle();
+
     document.getElementById('rozetAsama1').className = "badge bg-secondary";
     document.getElementById('rozetAsama2').className = "badge bg-dark";
     document.getElementById('btnSirayiBaslat').style.display = "none";
     document.getElementById('btnSirayiTamamla').style.display = "inline-block";
-    document.getElementById('atisYonergeMetni').innerText = "HER İSABETTE O YOLUN KUTUSUNA BİR KEZ DOKUNUN. ATIŞ BİTİNCE SIRAYI TAMAMLA DEYİN.";
-    yolKartlariniCiz();
-    yerelHafizayaKaydet();
-  }
 
-  function isabetArtir(index) {
-    const item = aktifYollar[index];
-    const eski = item.isabet === null ? "—" : item.isabet;
-    if (item.isabet === null) item.isabet = 1;
-    else if (item.isabet < aktifFaaliyet.mermi) item.isabet += 1;
-    else return;
+    document.getElementById('atisYonergeMetni').innerText = aktifFaaliyet.hedefTuru === "SABİT HEDEF"
+      ? "SABİT HEDEF: HER HEDEFİN + / - BUTONLARIYLA VURUŞ SAYISINI GİRİN. ATIŞ BİTİNCE ATIŞI BİTİR & SIRAYI TAMAMLA BUTONUNA BASIN."
+      : "PUANLI HEDEF: PUAN KUTUSUNA DOKUNUP EN FAZLA 100 ÜZERİNDEN ALDIĞI PUANI YAZIN. ATIŞ BİTİNCE ATIŞI BİTİR & SIRAYI TAMAMLA BUTONUNA BASIN.";
 
-    item.gecmis.unshift(`${cihazSaatiniAl()} İSABET ${eski} → ${item.isabet}`);
     yolKartlariniCiz();
-    yerelHafizayaKaydet();
   }
 
 
   // =========================================================================
-  // 7. DÜZELTME VE İŞLEM GEÇMİŞİ MODALI
+  // 9. NOT VE İŞLEM GEÇMİŞİ MODALI
   // =========================================================================
   function duzeltModalAc(index) {
     const item = aktifYollar[index];
     document.getElementById('duzeltYolIndex').value = index;
-    document.getElementById('duzeltBaslik').innerText = `YOL ${item.yol} • ${buyukHarfTr(item.kisi.ad)}`;
-    document.getElementById('duzeltMevcutSkor').innerText = item.isabet === null ? 0 : item.isabet;
-    document.getElementById('duzeltYeniSayi').value = item.isabet === null ? 0 : item.isabet;
+    document.getElementById('duzeltBaslik').innerText = `${buyukHarfTr(item.yolAdi)} • ${buyukHarfTr(item.kisi.ad)}`;
     document.getElementById('duzeltNotInput').value = buyukHarfTr(item.not || "");
     duzeltGecmisYenile(item);
     new bootstrap.Modal(document.getElementById('duzeltModal')).show();
@@ -1765,32 +2288,6 @@
     div.innerHTML = item.gecmis.length === 0 ? "HENÜZ DEĞİŞİKLİK KAYDI YOK." : item.gecmis.map(g => `<div>• ${buyukHarfTr(g)}</div>`).join('');
   }
 
-  function duzeltEksiBir() {
-    const idx = Number(document.getElementById('duzeltYolIndex').value);
-    const item = aktifYollar[idx];
-    const eski = item.isabet || 0;
-    if (eski <= 0) return;
-    item.isabet = eski - 1;
-    item.gecmis.unshift(`${cihazSaatiniAl()} DÜZELTME (-1): ${eski} → ${item.isabet}`);
-    document.getElementById('duzeltMevcutSkor').innerText = item.isabet;
-    duzeltGecmisYenile(item);
-    yolKartlariniCiz();
-    yerelHafizayaKaydet();
-  }
-
-  function duzeltSayiYaz() {
-    const idx = Number(document.getElementById('duzeltYolIndex').value);
-    const item = aktifYollar[idx];
-    const yeni = Math.min(aktifFaaliyet.mermi, Math.max(0, Number(document.getElementById('duzeltYeniSayi').value)));
-    const eski = item.isabet === null ? "—" : item.isabet;
-    item.isabet = yeni;
-    item.gecmis.unshift(`${cihazSaatiniAl()} DÜZELTME: ${eski} → ${yeni}`);
-    document.getElementById('duzeltMevcutSkor').innerText = yeni;
-    duzeltGecmisYenile(item);
-    yolKartlariniCiz();
-    yerelHafizayaKaydet();
-  }
-
   function duzeltNotEkle() {
     const idx = Number(document.getElementById('duzeltYolIndex').value);
     const item = aktifYollar[idx];
@@ -1799,32 +2296,57 @@
     item.not = notMetni;
     item.gecmis.unshift(`${cihazSaatiniAl()} NOT: "${notMetni}"`);
     duzeltGecmisYenile(item);
-    yerelHafizayaKaydet();
   }
 
 
   // =========================================================================
-  // 8. SIRA TAMAMLAMA SON KONTROLÜ
+  // 10. ATIŞ BİTTİ — TABLOYA İŞLE VE DERECESİNE GÖRE SIRALA
   // =========================================================================
   function siraTamamlaOnayAc() {
-    document.getElementById('siraTamamlaBaslik').innerText = `${siraNumarasi}. SIRA TAMAMLANSIN MI?`;
+    document.getElementById('siraTamamlaBaslik').innerText = `${siraNumarasi}. ATIŞ BİTTİ — SIRADAKİ ATIŞ SIRASINA GEÇELİM Mİ?`;
+    const aktifKisiSayisi = aktifYollar.filter(y => y.kisi !== null).length;
+    const kalanKisi = Math.max(0, atisKuyrugu.length - aktifKisiSayisi);
+    const sabitHedefMi = aktifFaaliyet.hedefTuru === "SABİT HEDEF";
+
+    document.getElementById('siradakiGecisBilgiMetni').innerText = kalanKisi > 0
+      ? `BU SIRADAKİ SONUÇLAR TABLOYA İŞLENECEK, DERECESİNE GÖRE SIRALANACAK VE SIRADA BEKLEYEN ${kalanKisi} ATICIDAN SONRAKİ GRUP YOLLARA YERLEŞTİRİLECEKTİR.`
+      : `BU SON ATIŞ SIRASIYDI. KAYDETTİĞİNİZDE TÜM SONUÇLAR DERECESİNE GÖRE SIRALANACAK VE NEZARETÇİ İMZASI EKRANI AÇILACAKTIR.`;
+
     const icerik = document.getElementById('siraTamamlaIcerik');
     let html = '';
 
     aktifYollar.forEach((item, idx) => {
       if (!item.kisi) return;
-      if (item.isabet !== null) {
-        html += `<div class="py-1 border-bottom"><b>YOL ${item.yol}</b> - ${buyukHarfTr(item.kisi.ad)} - <span class="text-dark fw-bold">İSABET: ${item.isabet}</span></div>`;
+
+      if (sabitHedefMi) {
+        const toplamVurus = yolToplamVurusHesapla(item);
+        if (item.vurusGirildiMi || toplamVurus > 0) {
+          html += `<div class="py-2 border-bottom"><b>${buyukHarfTr(item.yolAdi)}</b> - ${buyukHarfTr(item.kisi.ad)} - <span class="text-dark fw-bold">TOPLAM VURUŞ: ${toplamVurus} / ${aktifFaaliyet.mermi} (${yolHedefDetayMetni(item)})</span></div>`;
+        } else {
+          item.bosKarar = "0 VURUŞ";
+          html += `
+            <div class="py-2 border-bottom d-flex flex-wrap justify-content-between align-items-center bg-light px-2 rounded my-1 gap-2">
+              <div><b>${buyukHarfTr(item.yolAdi)}</b> - ${buyukHarfTr(item.kisi.ad)} <span class="badge bg-secondary">VURUŞ GİRİLMEDİ</span></div>
+              <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-dark" onclick="bosKararSec(${idx}, '0 VURUŞ', this)">0 VURUŞ</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="bosKararSec(${idx}, 'GELMEDİ', this)">GELMEDİ</button>
+              </div>
+            </div>`;
+        }
       } else {
-        item.bosKarar = "0 İSABET";
-        html += `
-          <div class="py-2 border-bottom d-flex justify-content-between align-items-center bg-light px-2 rounded my-1">
-            <div><b>YOL ${item.yol}</b> - ${buyukHarfTr(item.kisi.ad)} <span class="badge bg-secondary">İSABET GİRİLMEDİ</span></div>
-            <div class="btn-group btn-group-sm">
-              <button type="button" class="btn btn-dark" onclick="bosKararSec(${idx}, '0 İSABET', this)">0 İSABET</button>
-              <button type="button" class="btn btn-outline-secondary" onclick="bosKararSec(${idx}, 'ATIŞ YAPMADI', this)">ATIŞ YAPMADI</button>
-            </div>
-          </div>`;
+        if (item.puan !== null && item.puan !== undefined) {
+          html += `<div class="py-2 border-bottom"><b>${buyukHarfTr(item.yolAdi)}</b> - ${buyukHarfTr(item.kisi.ad)} - <span class="text-dark fw-bold">ALINAN PUAN: ${item.puan} / 100 PUAN</span></div>`;
+        } else {
+          item.bosKarar = "0 PUAN";
+          html += `
+            <div class="py-2 border-bottom d-flex flex-wrap justify-content-between align-items-center bg-light px-2 rounded my-1 gap-2">
+              <div><b>${buyukHarfTr(item.yolAdi)}</b> - ${buyukHarfTr(item.kisi.ad)} <span class="badge bg-secondary">PUAN GİRİLMEDİ</span></div>
+              <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-dark" onclick="bosKararSec(${idx}, '0 PUAN', this)">0 PUAN</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="bosKararSec(${idx}, 'GELMEDİ', this)">GELMEDİ</button>
+              </div>
+            </div>`;
+        }
       }
     });
 
@@ -1838,33 +2360,40 @@
     btn.className = "btn btn-dark";
   }
 
-  async function sirayiKesinTamamla() {
+  function sirayiKesinTamamla() {
     bootstrap.Modal.getInstance(document.getElementById('siraTamamlaModal')).hide();
     const tarihSaat = cihazSaatiniAl();
+    const sabitHedefMi = aktifFaaliyet.hedefTuru === "SABİT HEDEF";
     let tamamlananKisi = 0;
 
     aktifYollar.forEach(item => {
       if (!item.kisi) return;
       tamamlananKisi++;
-      const atisYaptiMi = item.isabet !== null || item.bosKarar !== 'ATIŞ YAPMADI';
-      const isabet = item.isabet === null ? 0 : item.isabet;
+      const toplamVurus = yolToplamVurusHesapla(item);
+      const girilenPuan = item.puan !== null && item.puan !== undefined ? Math.min(100, Number(item.puan)) : 0;
+      const atisYaptiMi = sabitHedefMi
+        ? (item.vurusGirildiMi || toplamVurus > 0 || item.bosKarar !== 'GELMEDİ')
+        : (item.puan !== null || item.bosKarar !== 'GELMEDİ');
       const harcanan = atisYaptiMi ? aktifFaaliyet.mermi : 0;
+      const yoklamaDurumuMetni = atisYaptiMi ? "GELDİ" : "GELMEDİ";
+      const sayisalSkor = atisYaptiMi ? (sabitHedefMi ? toplamVurus : girilenPuan) : 0;
+      const puanVeyaSonucDegeri = atisYaptiMi
+        ? (sabitHedefMi ? `${toplamVurus}/${aktifFaaliyet.mermi} VURUŞ` : `${girilenPuan} PUAN`)
+        : 0;
 
-      atisArsivi.unshift({
-        faaliyetKod: buyukHarfTr(aktifFaaliyet.kod),
+      excelSatiriniGuncelle(item.kisi.id, {
         faaliyetAdi: buyukHarfTr(aktifFaaliyet.adi),
+        birlik: buyukHarfTr(aktifFaaliyet.birlik),
+        yer: buyukHarfTr(aktifFaaliyet.yer),
+        silah: buyukHarfTr(aktifFaaliyet.silah),
         tarih: tarihSaat,
-        sira: siraNumarasi,
-        yol: item.yol,
-        rutbe: buyukHarfTr(item.kisi.rutbe),
-        ad: buyukHarfTr(item.kisi.ad),
-        sicil: String(item.kisi.sicil),
-        gozlemci: buyukHarfTr(item.gozlemci),
+        nezaretci: buyukHarfTr(item.nezaretci),
+        hedefTuru: buyukHarfTr(aktifFaaliyet.hedefTuru),
+        puan: puanVeyaSonucDegeri,
+        skor: sayisalSkor,
         atilanMermi: harcanan,
-        isabet: isabet,
-        puan100: atisYaptiMi ? Math.round((isabet / aktifFaaliyet.mermi) * 100) : 0,
-        durum: atisYaptiMi ? 'HAZIR' : 'ATIŞ YAPMADI',
-        gecmis: item.gecmis
+        hedefDetay: (atisYaptiMi && sabitHedefMi) ? yolHedefDetayMetni(item) : "-",
+        yoklamaDurumu: yoklamaDurumuMetni
       });
     });
 
@@ -1872,148 +2401,148 @@
     bitenSayisi += tamamlananKisi;
     siraNumarasi++;
 
-    await exceleKaydet();
+    tabloVeDurumGuncelle();
     siradakiGrubuYollaraYerlestir();
   }
 
-  function kanitDosyasiEklendi(input, tur) {
-    if (input.files && input.files[0]) {
-      alert(`${buyukHarfTr(tur)} KAYDEDİLDİ: ${buyukHarfTr(input.files[0].name)} (AKTİF SIRAYA BAĞLANDI).`);
-    }
-  }
-
 
   // =========================================================================
-  // 9. PERSONEL VE GÖZLEMCİ CRUD İŞLEMLERİ (NOT NULL & 11 HANE SAYI ZORUNLU)
+  // 11. EXCEL TABLOSU (KURS NO İLE ASKER EKLEME) VE KALICI NEZARETÇİ YÖNETİMİ
   // =========================================================================
-  function sicilDogrula(sicilDegeri) {
-    if (!sicilDegeri || sicilDegeri.trim() === "") {
-      alert("UYARI: SİCİL NO ALANI BOŞ BIRAKILAMAZ (NOT NULL)!");
+  function kursNoDogrula(kursNoDegeri) {
+    if (!kursNoDegeri || kursNoDegeri.trim() === "") {
+      alert("UYARI: KURS NO ALANI BOŞ BIRAKILAMAZ!");
       return false;
     }
-    if (!/^\d{11}$/.test(sicilDegeri)) {
-      alert(`UYARI: SİCİL NO SADECE SAYI DEĞERİ OLMALI VE TAM 11 KARAKTER GİRİLMELİDİR! (ŞU AN GİRİLEN: ${sicilDegeri.length} KARAKTER)`);
+    if (!/^\d{1,10}$/.test(kursNoDegeri)) {
+      alert("UYARI: KURS NO SADECE SAYI DEĞERİ OLMALIDIR!");
       return false;
     }
     return true;
   }
 
-  document.getElementById('gozlemciFormu').addEventListener('submit', async function(e) {
+  // Nezaretçi formundan Sicil No kaldırıldı — sadece Rütbe ve Adı Soyadı kaydedilir
+  document.getElementById('nezaretciFormu').addEventListener('submit', function(e) {
     e.preventDefault();
-    const duzId = document.getElementById('duzenlenenGozlemciId').value;
+    const duzId = document.getElementById('duzenlenenNezaretciId').value;
     const rutbe = buyukHarfTr(document.getElementById('gRutbe').value);
     const ad = buyukHarfTr(document.getElementById('gAd').value.trim());
-    const sicil = document.getElementById('gSicil').value.trim();
 
     if (!ad) {
-      alert("UYARI: GÖZLEMCİ ADI SOYADI BOŞ BIRAKILAMAZ!");
+      alert("UYARI: NEZARETÇİ ADI SOYADI BOŞ BIRAKILAMAZ!");
       document.getElementById('gAd').focus();
-      return;
-    }
-    if (!sicilDogrula(sicil)) {
-      document.getElementById('gSicil').focus();
       return;
     }
 
     if (duzId) {
-      const idx = gozlemciListesi.findIndex(g => String(g.id) === String(duzId));
-      if (idx !== -1) gozlemciListesi[idx] = { ...gozlemciListesi[idx], rutbe, ad, sicil };
+      const idx = nezaretciListesi.findIndex(g => String(g.id) === String(duzId));
+      if (idx !== -1) nezaretciListesi[idx] = { ...nezaretciListesi[idx], rutbe, ad };
     } else {
-      gozlemciListesi.push({ id: Date.now(), rutbe, ad, sicil, kayitTarihi: cihazSaatiniAl() });
+      nezaretciListesi.push({ id: Date.now(), rutbe, ad });
     }
-    await exceleKaydet();
-    gozlemciFormuTemizle();
-    gozlemciTablosunuCiz();
-    selectListeleriniDoldur();
+    kaliciVerileriKaydet();
+    nezaretciFormuTemizle();
+    nezaretciTablosunuCiz();
   });
 
-  function gozlemciSatirSec(id) {
-    const g = gozlemciListesi.find(i => String(i.id) === String(id));
+  function nezaretciSatirSec(id) {
+    const g = nezaretciListesi.find(i => String(i.id) === String(id));
     if (!g) return;
-    seciliGozlemciId = g.id;
-    document.getElementById('duzenlenenGozlemciId').value = g.id;
+    seciliNezaretciId = g.id;
+    document.getElementById('duzenlenenNezaretciId').value = g.id;
     document.getElementById('gRutbe').value = buyukHarfTr(g.rutbe);
     document.getElementById('gAd').value = buyukHarfTr(g.ad);
-    document.getElementById('gSicil').value = String(g.sicil);
-    document.getElementById('btnGozlemciKaydet').innerText = "GÜNCELLE";
-    document.getElementById('btnGozlemciVazgec').style.display = "inline-block";
-    gozlemciTablosunuCiz();
+    document.getElementById('btnNezaretciKaydet').innerText = "GÜNCELLE";
+    document.getElementById('btnNezaretciVazgec').style.display = "inline-block";
+    nezaretciTablosunuCiz();
   }
 
-  function gozlemciFormuTemizle() {
-    seciliGozlemciId = null;
-    document.getElementById('duzenlenenGozlemciId').value = "";
+  function nezaretciFormuTemizle() {
+    seciliNezaretciId = null;
+    document.getElementById('duzenlenenNezaretciId').value = "";
     document.getElementById('gAd').value = "";
-    document.getElementById('gSicil').value = "";
-    document.getElementById('btnGozlemciKaydet').innerHTML = `<i class="bi bi-save"></i> GÖZLEMCİ KAYDET`;
-    document.getElementById('btnGozlemciVazgec').style.display = "none";
-    gozlemciTablosunuCiz();
+    document.getElementById('btnNezaretciKaydet').innerHTML = `<i class="bi bi-save me-1"></i> NEZARETÇİ KAYDET`;
+    document.getElementById('btnNezaretciVazgec').style.display = "none";
+    nezaretciTablosunuCiz();
   }
 
-  async function gozlemciSil(e, id) {
+  function nezaretciSil(e, id) {
     e.stopPropagation();
-    if (!confirm("GÖZLEMCİ KAYDI SİLİNSİN Mİ?")) return;
-    gozlemciListesi = gozlemciListesi.filter(g => String(g.id) !== String(id));
-    await exceleKaydet();
-    gozlemciTablosunuCiz();
-    selectListeleriniDoldur();
+    nezaretciListesi = nezaretciListesi.filter(g => String(g.id) !== String(id));
+    kaliciVerileriKaydet();
+    nezaretciTablosunuCiz();
   }
 
-  function gozlemciTablosunuCiz() {
-    const tbody = document.getElementById('gozlemciTabloGovde');
-    const arama = buyukHarfTr(document.getElementById('gozlemciAramaInput').value);
-    document.getElementById('toplamGozlemciSayisi').innerText = gozlemciListesi.length;
-    const filtre = gozlemciListesi.filter(g => buyukHarfTr(g.ad).includes(arama) || String(g.sicil).includes(arama));
-    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="6" class="text-center py-3 text-muted">KAYIT YOK.</td></tr>` :
+  function nezaretciTablosunuCiz() {
+    const tbody = document.getElementById('nezaretciTabloGovde');
+    const arama = buyukHarfTr(document.getElementById('nezaretciAramaInput').value);
+    document.getElementById('toplamNezaretciSayisi').innerText = nezaretciListesi.length;
+    const filtre = nezaretciListesi.filter(g => buyukHarfTr(g.ad).includes(arama) || buyukHarfTr(g.rutbe).includes(arama));
+    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="4" class="text-center py-3 text-muted">HENÜZ NEZARETÇİ EKLENMEDİ.</td></tr>` :
       filtre.map((g, i) => `
-        <tr onclick="gozlemciSatirSec('${g.id}')" class="${String(g.id) === String(seciliGozlemciId) ? 'secili-satir' : ''}">
+        <tr onclick="nezaretciSatirSec('${g.id}')" class="${String(g.id) === String(seciliNezaretciId) ? 'secili-satir' : ''}">
           <td>${i + 1}</td>
           <td><span class="badge bg-secondary">${buyukHarfTr(g.rutbe)}</span></td>
           <td class="fw-bold">${buyukHarfTr(g.ad)}</td>
-          <td>${String(g.sicil)}</td>
-          <td class="small">${g.kayitTarihi}</td>
           <td class="text-center">
-            <button onclick="gozlemciSil(event, '${g.id}')" class="btn btn-dark btn-sm py-0 px-2">SİL</button>
+            <button onclick="nezaretciSil(event, '${g.id}')" class="btn btn-dark btn-sm py-0 px-2">SİL</button>
           </td>
         </tr>`).join('');
   }
 
-  document.getElementById('personelFormu').addEventListener('submit', async function(e) {
+  document.getElementById('personelFormu').addEventListener('submit', function(e) {
     e.preventDefault();
     const duzId = document.getElementById('duzenlenenId').value;
     const rutbe = buyukHarfTr(document.getElementById('pRutbe').value);
+    const kursNo = document.getElementById('pKursNo').value.trim();
     const ad = buyukHarfTr(document.getElementById('pAd').value.trim());
-    const sicil = document.getElementById('pSicil').value.trim();
 
-    if (!ad) {
-      alert("UYARI: PERSONEL ADI SOYADI BOŞ BIRAKILAMAZ!");
-      document.getElementById('pAd').focus();
+    if (!kursNoDogrula(kursNo)) {
+      document.getElementById('pKursNo').focus();
       return;
     }
-    if (!sicilDogrula(sicil)) {
-      document.getElementById('pSicil').focus();
+    if (!ad) {
+      alert("UYARI: ADI SOYADI BOŞ BIRAKILAMAZ!");
+      document.getElementById('pAd').focus();
       return;
     }
 
     if (duzId) {
-      const idx = personelListesi.findIndex(p => String(p.id) === String(duzId));
-      if (idx !== -1) personelListesi[idx] = { ...personelListesi[idx], rutbe, ad, sicil };
+      const idx = excelTablosu.findIndex(p => String(p.id) === String(duzId));
+      if (idx !== -1) excelTablosu[idx] = { ...excelTablosu[idx], rutbe, kursNo, ad };
     } else {
-      personelListesi.push({ id: Date.now(), rutbe, ad, sicil, kayitTarihi: cihazSaatiniAl() });
+      excelTablosu.push({
+        id: Date.now() + Math.random(),
+        orijinalSira: excelTablosu.length + 1,
+        rutbe,
+        kursNo,
+        ad,
+        faaliyetAdi: "",
+        birlik: "",
+        yer: "",
+        silah: "",
+        tarih: "",
+        nezaretci: "",
+        hedefTuru: "",
+        puan: "",
+        skor: 0,
+        atilanMermi: 0,
+        hedefDetay: "-",
+        yoklamaDurumu: ""
+      });
     }
-    await exceleKaydet();
+    tabloVeDurumGuncelle();
     formuTemizle();
-    personelTablosunuCiz();
   });
 
   function satirSecVeDoldur(id) {
-    const p = personelListesi.find(i => String(i.id) === String(id));
+    const p = excelTablosu.find(i => String(i.id) === String(id));
     if (!p) return;
     seciliSatirId = p.id;
     document.getElementById('duzenlenenId').value = p.id;
-    document.getElementById('pRutbe').value = buyukHarfTr(p.rutbe);
+    document.getElementById('pRutbe').value = buyukHarfTr(p.rutbe || "ER");
+    document.getElementById('pKursNo').value = String(p.kursNo);
     document.getElementById('pAd').value = buyukHarfTr(p.ad);
-    document.getElementById('pSicil').value = String(p.sicil);
     document.getElementById('btnKaydetGuncelle').innerText = "GÜNCELLE";
     document.getElementById('btnVazgec').style.display = "inline-block";
     personelTablosunuCiz();
@@ -2022,167 +2551,139 @@
   function formuTemizle() {
     seciliSatirId = null;
     document.getElementById('duzenlenenId').value = "";
+    document.getElementById('pKursNo').value = "";
     document.getElementById('pAd').value = "";
-    document.getElementById('pSicil').value = "";
-    document.getElementById('btnKaydetGuncelle').innerHTML = `<i class="bi bi-save"></i> KAYDET`;
+    document.getElementById('btnKaydetGuncelle').innerHTML = `<i class="bi bi-plus-lg me-1"></i> ASKER EKLE`;
     document.getElementById('btnVazgec').style.display = "none";
     personelTablosunuCiz();
   }
 
-  async function personelSil(e, id) {
+  function personelSil(e, id) {
     e.stopPropagation();
-    if (!confirm("PERSONEL SİLİNSİN Mİ?")) return;
-    personelListesi = personelListesi.filter(p => String(p.id) !== String(id));
-    await exceleKaydet();
-    personelTablosunuCiz();
+    excelTablosu = excelTablosu.filter(p => String(p.id) !== String(id));
+    tabloVeDurumGuncelle();
   }
 
   function personelTablosunuCiz() {
+    excelTablosunuDereceyeGoreSirala();
+
     const tbody = document.getElementById('personelTabloGovde');
     const arama = buyukHarfTr(document.getElementById('tabloAramaInput').value);
-    document.getElementById('toplamPersonelSayisi').innerText = personelListesi.length;
-    const filtre = personelListesi.filter(p => buyukHarfTr(p.ad).includes(arama) || String(p.sicil).includes(arama));
-    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="6" class="text-center py-3 text-muted">KAYIT YOK.</td></tr>` :
-      filtre.map((p, i) => `
-        <tr onclick="satirSecVeDoldur('${p.id}')" class="${String(p.id) === String(seciliSatirId) ? 'secili-satir' : ''}">
-          <td>${i + 1}</td>
-          <td><span class="badge bg-secondary">${buyukHarfTr(p.rutbe)}</span></td>
-          <td class="fw-bold"><a href="#" onclick="kisiGelisimModalAc(event, '${String(p.sicil)}', '${buyukHarfTr(p.ad)}', '${buyukHarfTr(p.rutbe)}')" class="text-dark text-decoration-none">${buyukHarfTr(p.ad)}</a></td>
-          <td>${String(p.sicil)}</td>
-          <td class="small">${p.kayitTarihi}</td>
+    document.getElementById('toplamPersonelSayisi').innerText = excelTablosu.length;
+    const filtre = excelTablosu.filter(p => buyukHarfTr(p.ad).includes(arama) || String(p.kursNo).includes(arama));
+
+    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="10" class="text-center py-4 text-muted">TABLO BOŞ.</td></tr>` :
+      filtre.map((p, i) => {
+        const durum = buyukHarfTr(p.yoklamaDurumu) || "BEKLİYOR";
+        const gelmediMi = durum === "GELMEDİ" || durum === "RAPORLU" || durum === "İZİNLİ";
+        return `
+        <tr onclick="satirSecVeDoldur('${p.id}')" class="${String(p.id) === String(seciliSatirId) ? 'secili-satir' : ''} ${gelmediMi ? 'opacity-75 bg-light' : ''}">
+          <td class="fw-bold">${i + 1}</td>
+          <td><span class="badge bg-secondary">${buyukHarfTr(p.rutbe || "ER")}</span></td>
+          <td class="fw-bold">${String(p.kursNo)}</td>
+          <td class="fw-bold"><a href="#" onclick="kisiGelisimModalAc(event, '${String(p.kursNo)}', '${buyukHarfTr(p.ad)}')" class="text-dark text-decoration-none">${buyukHarfTr(p.ad)}</a></td>
+          <td class="small">${p.tarih || "-"}</td>
+          <td class="small">${buyukHarfTr(p.nezaretci) || "-"}</td>
+          <td class="small">${buyukHarfTr(p.hedefTuru) || "-"}</td>
+          <td class="fw-bold">${p.puan !== "" && p.puan !== null && p.puan !== undefined ? p.puan : "-"}</td>
+          <td class="small fw-bold">${durum}</td>
           <td class="text-center">
             <button onclick="personelSil(event, '${p.id}')" class="btn btn-dark btn-sm py-0 px-2">SİL</button>
           </td>
-        </tr>`).join('');
+        </tr>`;
+      }).join('');
   }
 
 
   // =========================================================================
-  // 10. ARŞİV, PUAN SIRALAMASI, KİŞİ GELİŞİM GRAFİĞİ VE İMZALI RAPOR
+  // 12. SONUÇLAR & RAPOR (SADECE EXCEL'E İŞLENEN GÜNCEL VERİLER)
   // =========================================================================
-  function arsivAltSekme(tur) {
-    ['kayitlar', 'siralama'].forEach(t => {
-      document.getElementById('arsiv-' + t).style.display = (t === tur) ? 'block' : 'none';
+  function islenmisKayitlariGetir() {
+    excelTablosunuDereceyeGoreSirala();
+    return excelTablosu.filter(k => {
+      const durum = buyukHarfTr(k.yoklamaDurumu || "").trim();
+      return durum === "GELDİ" || durum === "GELMEDİ" || durum === "RAPORLU" || durum === "İZİNLİ";
     });
-    ['tabBtnKayitlar', 'tabBtnSiralama'].forEach(id => document.getElementById(id).classList.remove('aktif'));
-    if (tur === 'kayitlar') { document.getElementById('tabBtnKayitlar').classList.add('aktif'); arsivTablosunuCiz(); }
-    if (tur === 'siralama') { document.getElementById('tabBtnSiralama').classList.add('aktif'); puanSiralamasiCiz(); }
   }
 
   function arsivTablosunuCiz() {
-    const toplamSarf = atisArsivi.reduce((t, a) => t + a.atilanMermi, 0);
-    document.getElementById('muhimmatSarfOzet').innerText = `MÜHİMMAT SARFI: TOPLAM ${toplamSarf} ADET`;
+    const islenmisListe = islenmisKayitlariGetir();
+    const toplamSarf = islenmisListe.reduce((t, a) => t + (Number(a.atilanMermi) || 0), 0);
+    document.getElementById('muhimmatSarfOzet').innerText = `MÜHİMMAT SARFI: TOPLAM ${toplamSarf} ADET (SADECE EXCEL'E İŞLENEN KAYITLAR)`;
+    document.getElementById('islenmisKayitSayisi').innerText = islenmisListe.length;
 
     const arama = buyukHarfTr(document.getElementById('arsivArama').value);
     const tbody = document.getElementById('arsivTabloGovde');
-    const filtre = atisArsivi.filter(a => buyukHarfTr(a.ad).includes(arama) || String(a.sicil).includes(arama) || buyukHarfTr(a.faaliyetAdi).includes(arama));
+    const filtre = islenmisListe.filter(a => buyukHarfTr(a.ad).includes(arama) || String(a.kursNo).includes(arama));
 
-    tbody.innerHTML = filtre.length === 0 ? `<tr><td colspan="8" class="text-center py-3 text-muted">ARŞİV KAYDI BULUNAMADI.</td></tr>` :
-      filtre.map(a => `
+    tbody.innerHTML = filtre.length === 0
+      ? `<tr><td colspan="9" class="text-center py-4 text-muted">HENÜZ EXCEL'E İŞLENMİŞ ATIŞ SONUCU YOK.</td></tr>`
+      : filtre.map((a, idx) => {
+        const durum = buyukHarfTr(a.yoklamaDurumu);
+        const sabitMi = buyukHarfTr(a.hedefTuru) === 'SABİT HEDEF';
+        const skor = puanSkoruCozumle(a);
+        const sonucRozeti = durum !== "GELDİ"
+          ? `<span class="badge bg-secondary">0</span>`
+          : (sabitMi
+              ? `<span class="badge bg-dark">${a.puan || `${skor} VURUŞ`}</span>`
+              : `<span class="badge ${skor >= 70 ? 'bg-dark' : 'bg-secondary'}">${skor} / 100 PUAN</span>`);
+
+        return `
         <tr>
-          <td class="small"><b>${buyukHarfTr(a.faaliyetKod)}</b><br>${a.tarih}</td>
-          <td>${a.sira}. SIRA / YOL ${a.yol}</td>
-          <td class="fw-bold"><a href="#" class="text-dark" onclick="kisiGelisimModalAc(event, '${String(a.sicil)}', '${buyukHarfTr(a.ad)}', '${buyukHarfTr(a.rutbe)}')">${buyukHarfTr(a.rutbe)} ${buyukHarfTr(a.ad)}</a></td>
-          <td>${String(a.sicil)}</td>
-          <td>${buyukHarfTr(a.gozlemci)}</td>
-          <td>${a.isabet} / ${a.atilanMermi}</td>
-          <td><span class="badge ${a.puan100 >= 70 ? 'bg-dark' : 'bg-secondary'}">${a.puan100} PUAN</span></td>
-          <td class="small">${buyukHarfTr(a.durum)}</td>
-        </tr>`).join('');
-  }
-
-  function puanSiralamasiCiz() {
-    const harita = {};
-    atisArsivi.filter(a => buyukHarfTr(a.durum) === 'HAZIR').forEach(a => {
-      if (!harita[a.sicil]) harita[a.sicil] = { ad: buyukHarfTr(a.ad), rutbe: buyukHarfTr(a.rutbe), sicil: String(a.sicil), puanlar: [] };
-      harita[a.sicil].puanlar.push(a.puan100);
-    });
-
-    const liste = Object.values(harita).map(k => {
-      const ort = Number((k.puanlar.reduce((s, p) => s + p, 0) / k.puanlar.length).toFixed(1));
-      return {
-        ...k,
-        atisSayisi: k.puanlar.length,
-        ortalama: ort,
-        enIyi: Math.max(...k.puanlar),
-        enDusuk: Math.min(...k.puanlar),
-        sonPuan: k.puanlar[0]
-      };
-    }).sort((a, b) => b.ortalama - a.ortalama || a.ad.localeCompare(b.ad, 'tr'));
-
-    const tbody = document.getElementById('siralamaTabloGovde');
-    let aktifSira = 1;
-    tbody.innerHTML = liste.map((k, idx) => {
-      if (idx > 0 && k.ortalama < liste[idx - 1].ortalama) aktifSira = idx + 1;
-      return `
-        <tr>
-          <td class="fw-bold">${aktifSira}.</td>
-          <td class="fw-bold"><a href="#" class="text-dark" onclick="kisiGelisimModalAc(event, '${k.sicil}', '${k.ad}', '${k.rutbe}')">${k.ad}</a></td>
-          <td>${k.rutbe}</td>
-          <td>${k.sicil}</td>
-          <td>${k.atisSayisi}</td>
-          <td class="fw-bold">${k.ortalama.toString().replace('.', ',')}</td>
-          <td>${k.enIyi}</td>
-          <td>${k.enDusuk}</td>
-          <td>${k.sonPuan}</td>
+          <td class="fw-bold">${idx + 1}</td>
+          <td><span class="badge bg-secondary">${buyukHarfTr(a.rutbe || "ER")}</span></td>
+          <td class="fw-bold">${String(a.kursNo)}</td>
+          <td class="fw-bold"><a href="#" class="text-dark text-decoration-none" onclick="kisiGelisimModalAc(event, '${String(a.kursNo)}', '${buyukHarfTr(a.ad)}')">${buyukHarfTr(a.ad)}</a></td>
+          <td class="small">${a.tarih || "-"}</td>
+          <td>${buyukHarfTr(a.nezaretci) || "-"}</td>
+          <td class="small"><b>${buyukHarfTr(a.hedefTuru) || "-"}</b></td>
+          <td>${sonucRozeti}</td>
+          <td class="small fw-bold">${durum}</td>
         </tr>`;
-    }).join('');
+      }).join('');
   }
 
-  function kisiGelisimModalAc(e, sicil, ad, rutbe) {
+  function kisiGelisimModalAc(e, kursNo, ad) {
     e.preventDefault();
     e.stopPropagation();
-    const kayitlar = atisArsivi.filter(a => String(a.sicil) === String(sicil) && buyukHarfTr(a.durum) === 'HAZIR').reverse();
-    document.getElementById('kisiGecmisBaslik').innerText = `${buyukHarfTr(ad)} • ${buyukHarfTr(rutbe)} • ${String(sicil)} (${kayitlar.length} KAYIT)`;
+    const kayitlar = islenmisKayitlariGetir().filter(a => String(a.kursNo) === String(kursNo));
+    document.getElementById('kisiGecmisBaslik').innerText = `${buyukHarfTr(ad)} • KURS NO: ${String(kursNo)}`;
 
     if (kayitlar.length === 0) {
-      document.getElementById('kisiGecmisIcerik').innerHTML = `<p class="text-muted">BU PERSONELE AİT PUANLI ATIŞ KAYDI BULUNMUYOR.</p>`;
+      document.getElementById('kisiGecmisIcerik').innerHTML = `<p class="text-muted">BU ATICIYA AİT EXCEL'E İŞLENMİŞ KAYIT BULUNMUYOR.</p>`;
     } else {
-      const puanlar = kayitlar.map(k => k.puan100);
-      const ort = (puanlar.reduce((a, b) => a + b, 0) / puanlar.length).toFixed(1);
-      const enIyi = Math.max(...puanlar);
-      const enDusuk = Math.min(...puanlar);
-
-      const w = 680, h = 150, pad = 25;
-      const noktalar = kayitlar.map((k, i) => {
-        const x = pad + (kayitlar.length === 1 ? (w - 2 * pad) / 2 : (i / (kayitlar.length - 1)) * (w - 2 * pad));
-        const y = h - pad - (k.puan100 / 100) * (h - 2 * pad);
-        return { x, y, puan: k.puan100 };
-      });
-      const poly = noktalar.map(n => `${n.x},${n.y}`).join(' ');
-
       document.getElementById('kisiGecmisIcerik').innerHTML = `
-        <div class="row g-2 text-center mb-3">
-          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${kayitlar.length}</div><small class="text-muted">ATIŞ SAYISI</small></div></div>
-          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${ort}</div><small class="text-muted">ORTALAMA</small></div></div>
-          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${enIyi}</div><small class="text-muted">EN İYİ</small></div></div>
-          <div class="col"><div class="border rounded p-2"><div class="fs-4 fw-bold">${enDusuk}</div><small class="text-muted">EN DÜŞÜK</small></div></div>
-        </div>
-        <div class="border rounded p-2 mb-3 text-center">
-          <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:150px;">
-            <polyline fill="none" stroke="#343a40" stroke-width="3" points="${poly}" />
-            ${noktalar.map(n => `<circle cx="${n.x}" cy="${n.y}" r="5" fill="#343a40" /><text x="${n.x}" y="${n.y - 10}" font-size="11" font-weight="bold" text-anchor="middle" fill="#212529">${n.puan}</text>`).join('')}
-          </svg>
-        </div>
-        <table class="dgv-table">
-          <thead><tr><th>FAALİYET</th><th>TARİH</th><th>İSABET</th><th>MÜHİMMAT</th><th>PUAN</th><th>GÖZLEMCİ</th></tr></thead>
-          <tbody>${kayitlar.slice().reverse().map(k => `<tr><td>${buyukHarfTr(k.faaliyetAdi)}</td><td>${k.tarih}</td><td>${k.isabet}</td><td>${k.atilanMermi}</td><td><b>${k.puan100}</b></td><td>${buyukHarfTr(k.gozlemci)}</td></tr>`).join('')}</tbody>
-        </table>`;
+        <div class="dgv-container">
+          <table class="dgv-table">
+            <thead><tr><th>FAALİYET</th><th>TARİH</th><th>HEDEF TÜRÜ</th><th>PUAN / SONUÇ</th><th>NEZARETÇİ</th><th>DURUM</th></tr></thead>
+            <tbody>${kayitlar.map(k => `
+              <tr>
+                <td>${buyukHarfTr(k.faaliyetAdi || aktifFaaliyet.adi)}</td>
+                <td>${k.tarih || "-"}</td>
+                <td>${buyukHarfTr(k.hedefTuru || "-")}</td>
+                <td><b>${k.puan !== "" ? k.puan : "0"}</b></td>
+                <td>${buyukHarfTr(k.nezaretci || "-")}</td>
+                <td><b>${buyukHarfTr(k.yoklamaDurumu)}</b></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
     }
     new bootstrap.Modal(document.getElementById('kisiGecmisModal')).show();
   }
 
 
   // =========================================================================
-  // 11. ATIŞ SORUMLUSU PARMAKLA İMZA, RAPOR VE YEDEKLEME
+  // 13. NEZARETÇİ İMZASI (ATIŞ BİTİŞİ + ADMİN PANELİ) VE ÇOK SAYFALI PDF RAPOR
   // =========================================================================
-  let ciziyorMu = false;
-  function imzaCanvasHazirla() {
-    const canvas = document.getElementById('imzaCanvas');
+  function imzaCanvasHazirla(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.strokeStyle = '#212529';
+    let ciziyor = false;
 
     const pos = (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -2191,37 +2692,69 @@
       return { x: clientX - rect.left, y: clientY - rect.top };
     };
 
-    canvas.addEventListener('mousedown', (e) => { ciziyorMu = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); });
-    canvas.addEventListener('mousemove', (e) => { if (!ciziyorMu) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-    window.addEventListener('mouseup', () => ciziyorMu = false);
+    canvas.addEventListener('mousedown', (e) => { ciziyor = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); });
+    canvas.addEventListener('mousemove', (e) => { if (!ciziyor) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    window.addEventListener('mouseup', () => { ciziyor = false; });
 
-    canvas.addEventListener('touchstart', (e) => { ciziyorMu = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); });
-    canvas.addEventListener('touchmove', (e) => { if (!ciziyorMu) return; e.preventDefault(); const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-    window.addEventListener('touchend', () => ciziyorMu = false);
+    canvas.addEventListener('touchstart', (e) => { ciziyor = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); });
+    canvas.addEventListener('touchmove', (e) => { if (!ciziyor) return; e.preventDefault(); const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    window.addEventListener('touchend', () => { ciziyor = false; });
+  }
+
+  function bitisImzaTemizle() {
+    const canvas = document.getElementById('bitisImzaCanvas');
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    kayitliImzaDataUrl = null;
+    document.getElementById('bitisImzaOnayYazisi').style.display = 'none';
+    ekranSayaclariniGuncelle();
+  }
+
+  function bitisImzaKaydet() {
+    const canvas = document.getElementById('bitisImzaCanvas');
+    kayitliImzaDataUrl = canvas.toDataURL('image/png');
+    document.getElementById('bitisImzaOnayYazisi').style.display = 'block';
+    ekranSayaclariniGuncelle();
+  }
+
+  function bitisImzaKaydetVeExcelIndir() {
+    bitisImzaKaydet();
+    islenmisExcelIndir();
+    const modal = bootstrap.Modal.getInstance(document.getElementById('atisBitisVeImzaModal'));
+    if (modal) modal.hide();
+    sekmeAc('personel', document.querySelector('[data-sekme=personel]'));
+  }
+
+  function bitisModalKapatAdminGec() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('atisBitisVeImzaModal'));
+    if (modal) modal.hide();
+    sekmeAc('admin', document.querySelector('[data-sekme=admin]'));
   }
 
   function imzaModalAc() {
-    document.getElementById('imzaSorumluBilgi').innerText = buyukHarfTr(aktifFaaliyet.sorumlu);
     new bootstrap.Modal(document.getElementById('imzaModal')).show();
   }
 
   function imzaTemizle() {
     const canvas = document.getElementById('imzaCanvas');
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    kayitliImzaDataUrl = null;
+    ekranSayaclariniGuncelle();
   }
 
   function imzaKaydet() {
     kayitliImzaDataUrl = document.getElementById('imzaCanvas').toDataURL('image/png');
-    yerelHafizayaKaydet();
     bootstrap.Modal.getInstance(document.getElementById('imzaModal')).hide();
-    raporYazdirAc();
+    ekranSayaclariniGuncelle();
+    alert("NEZARETÇİ İMZASI KAYDEDİLDİ! PDF RAPOR OLUŞTURDUĞUNUZDA BU İMZA KULLANILACAKTIR.");
   }
 
   function raporYazdirAc() {
-    const atisYapanlar = atisArsivi.filter(a => buyukHarfTr(a.durum) === 'HAZIR');
-    const yapmayanlar = atisArsivi.filter(a => buyukHarfTr(a.durum) !== 'HAZIR');
-    const toplamSarf = atisYapanlar.reduce((t, a) => t + a.atilanMermi, 0);
-    const ortPuan = atisYapanlar.length > 0 ? (atisYapanlar.reduce((t, a) => t + a.puan100, 0) / atisYapanlar.length).toFixed(1) : "0";
+    const islenmisListe = islenmisKayitlariGetir();
+    const raporListesi = islenmisListe.length > 0 ? islenmisListe : excelTablosu;
+
+    const atisYapanlar = raporListesi.filter(a => buyukHarfTr(a.yoklamaDurumu) === 'GELDİ');
+    const yapmayanlar = raporListesi.filter(a => buyukHarfTr(a.yoklamaDurumu) !== 'GELDİ');
+    const toplamSarf = atisYapanlar.reduce((t, a) => t + (Number(a.atilanMermi) || aktifFaaliyet.mermi), 0);
 
     document.getElementById('raporCiktiAlani').innerHTML = `
       <div class="border-bottom pb-2 mb-3 d-flex justify-content-between">
@@ -2233,16 +2766,45 @@
       </div>
 
       <table class="table table-bordered table-sm small mb-3">
-        <tr><th>BİRLİK</th><td>${buyukHarfTr(aktifFaaliyet.birlik)}</td><th>ATIŞ YERİ</th><td>${buyukHarfTr(aktifFaaliyet.yer)}</td></tr>
-        <tr><th>ATIŞ SORUMLUSU</th><td>${buyukHarfTr(aktifFaaliyet.sorumlu)}</td><th>ATIŞ TÜRÜ</th><td>${buyukHarfTr(aktifFaaliyet.zaman)} / ${buyukHarfTr(aktifFaaliyet.hedef)} / ${buyukHarfTr(aktifFaaliyet.amac)}</td></tr>
-        <tr><th>KİŞİ BAŞI MÜHİMMAT</th><td>${aktifFaaliyet.mermi} ADET</td><th>ORTALAMA PUAN (100)</th><td><b>${ortPuan}</b></td></tr>
+        <tr><th>TABUR / BİRLİK</th><td>${buyukHarfTr(aktifFaaliyet.birlik || "-")}</td><th>ATIŞ YERİ</th><td>${buyukHarfTr(aktifFaaliyet.yer || "-")}</td></tr>
+        <tr><th>SİLAH / HEDEF TÜRÜ</th><td>${buyukHarfTr(aktifFaaliyet.silah)} / ${buyukHarfTr(aktifFaaliyet.hedefTuru)}</td><th>KİŞİ BAŞI FİŞEK</th><td>${aktifFaaliyet.mermi} ADET (TOPLAM: <b>${raporListesi.length} ATICI</b>)</td></tr>
       </table>
 
-      <h6 class="fw-bold">1. PERSONEL ATIŞ SONUÇLARI (${atisArsivi.length} KAYIT)</h6>
+      <h6 class="fw-bold">1. DERECELİ ATICI SONUÇLARI VE YOKLAMA DURUMU (${raporListesi.length} KAYIT)</h6>
       <table class="table table-bordered table-sm small mb-4">
-        <thead class="table-light"><tr><th>SIRA</th><th>ADI SOYADI</th><th>RÜTBE</th><th>SİCİL NO</th><th>YOL</th><th>İSABET</th><th>PUAN</th><th>DURUM</th><th>GÖZLEMCİ</th></tr></thead>
+        <thead class="table-light">
+          <tr>
+            <th>DERECE</th>
+            <th>RÜTBE</th>
+            <th>KURS NO</th>
+            <th>ADI SOYADI</th>
+            <th>TARİH</th>
+            <th>NEZARETÇİ</th>
+            <th>HEDEF TÜRÜ</th>
+            <th>PUAN / SONUÇ</th>
+            <th>YOKLAMA DURUMU</th>
+          </tr>
+        </thead>
         <tbody>
-          ${atisArsivi.map((a, i) => `<tr><td>${i + 1}</td><td>${buyukHarfTr(a.ad)}</td><td>${buyukHarfTr(a.rutbe)}</td><td>${String(a.sicil)}</td><td>${a.yol}</td><td>${a.isabet}</td><td><b>${a.puan100}</b></td><td>${buyukHarfTr(a.durum)}</td><td>${buyukHarfTr(a.gozlemci)}</td></tr>`).join('')}
+          ${raporListesi.map((a, i) => {
+            const durum = buyukHarfTr(a.yoklamaDurumu || "BEKLİYOR");
+            const sabitMi = buyukHarfTr(a.hedefTuru || aktifFaaliyet.hedefTuru) === 'SABİT HEDEF';
+            const skor = puanSkoruCozumle(a);
+            const sonucMetni = durum !== 'GELDİ'
+              ? '0'
+              : (sabitMi ? (a.puan || `${skor} VURUŞ`) : `${skor} / 100 PUAN`);
+            return `<tr>
+              <td>${i + 1}</td>
+              <td>${buyukHarfTr(a.rutbe || "ER")}</td>
+              <td>${String(a.kursNo)}</td>
+              <td>${buyukHarfTr(a.ad)}</td>
+              <td>${a.tarih || "-"}</td>
+              <td>${buyukHarfTr(a.nezaretci) || "-"}</td>
+              <td>${buyukHarfTr(a.hedefTuru || aktifFaaliyet.hedefTuru)}</td>
+              <td><b>${sonucMetni}</b></td>
+              <td>${durum}</td>
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
 
@@ -2250,40 +2812,19 @@
         <div class="col-7">
           <h6 class="fw-bold">2. MÜHİMMAT SARF ÖZETİ</h6>
           <table class="table table-bordered table-sm small">
-            <tr><th>ATIŞ YAPAN PERSONEL</th><td>${atisYapanlar.length} KİŞİ</td><td>${toplamSarf} ADET</td></tr>
-            <tr><th>ATIŞ YAPMAYAN / GELMEYEN</th><td>${yapmayanlar.length} KİŞİ</td><td>0 ADET</td></tr>
+            <tr><th>ATIŞ YAPAN ATICI</th><td>${atisYapanlar.length} KİŞİ</td><td>${toplamSarf} ADET</td></tr>
+            <tr><th>GELMEDİ / RAPORLU / İZİNLİ</th><td>${yapmayanlar.length} KİŞİ</td><td>0 ADET</td></tr>
             <tr class="table-light"><th>TOPLAM MÜHİMMAT SARFI</th><th>-</th><th>${toplamSarf} ADET</th></tr>
           </table>
         </div>
         <div class="col-5 text-center">
-          <div class="fw-bold small">ATIŞ SORUMLUSU</div>
-          <div class="small mb-1">${buyukHarfTr(aktifFaaliyet.sorumlu)}</div>
+          <div class="fw-bold small mb-1">NEZARETÇİ</div>
           ${kayitliImzaDataUrl ? `<img src="${kayitliImzaDataUrl}" style="max-height:80px; border-bottom:1px solid #000;">` : `<div style="height:60px; border-bottom:1px solid #000;"></div>`}
           <div class="small text-muted">İMZA</div>
         </div>
       </div>`;
 
     new bootstrap.Modal(document.getElementById('raporModal')).show();
-  }
-
-  function tamYedekIndir() {
-    const veri = localStorage.getItem('poligon_kayit_yedek') || "{}";
-    const blob = new Blob([veri], { type: "application/json" });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `POLIGON_TAM_YEDEK_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-  }
-
-  function tamYedekYukle(input) {
-    if (!input.files || !input.files[0]) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      localStorage.setItem('poligon_kayit_yedek', e.target.result);
-      yerelHafizadanYukle();
-      alert("TAM YEDEK BAŞARIYLA GERİ YÜKLENDİ!");
-    };
-    reader.readAsText(input.files[0]);
   }
 </script>
 </body>

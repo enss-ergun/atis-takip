@@ -1,0 +1,11 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "enss-ergun.github",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "enss-ergun.github",
+  "start_url": "/",
+  "theme_color": "#ffffff"
+}
